@@ -205,11 +205,90 @@ When working with the above files on your computer locally, it is a good practic
 There are multiple ways to update files in GitHub, some more complicated than others. Here, we show simple ways to make updates to two broad types of files:
 
 ### Updating native GitHub files
-Some files, especially code files, are rendered natively in GitHub. This is true of markdown and Rmarkdown documents. To update such files, use a simple copy and paste method:
+Some files, especially code files, are rendered natively in GitHub. This is true of css, markdown, and Rmarkdown documents. To update such files, use a simple copy and paste method:
 
 - Click on the file name in GitHub
 - Click the pencil symbol in the upper right corner to edit the file
 - Click in the text box and select all the text by hitting `Ctrl`+`A`
-- Press `Delete`
-- Now go to your up-to-date local copy of the file. Copy all your code from your local copy of the file.
+- Press `Delete`. It feels scary, but do not worry: GitHub will save a copy of this file version
+- Now go to your up-to-date local copy of the file. Copy all your code from your local copy of the file
 - Paste your code into the empty box on GitHub
+- Scroll down to the "Commit changes" section. Provide a very brief description of what updates were made
+- Click the green button labeled "Commit changes"
+
+<br />
+
+<img src="img/commit_changes.png" style="display: block; margin: 0 auto; height: 400px;">
+
+<br />
+
+Your updates have now been saved. At any time, you can click on that updated file in GitHub and see those updates rendered natively. Next to the editing pencil tool on the file page, you will also see a `History` button. This shows the edits made to document during each update, line-by-line. Red indicates lines or expressions that were cut, and green indicates added material. 
+
+### Updating non-native GitHub files
+Many files do not render natively on GitHub, including HTML, CSV, PNG, Word, and many others. GitHub will not track changes to these files in updates. Instead, to update such files, you will have to delete and replace:
+
+- Click on the file name in GitHub
+- Click the trash can symbol in the upper right corner
+- Confirm the deletion by clicking "Commit changes"
+- Navigate back into the repository folder that contained the (just-deleted) file
+- Click the "Upload files" button in the top right corner
+- Drag your updated file to the box (or find via "choose your files")
+- Click "Commit changes"
+
+### Uploading new files
+To upload a new file to one of your GitHub repository folders:
+
+- Find the repository folder into which you would like to upload the new file and click into it 
+- Click the "Upload files" button in the top right corner
+- Drag the new file to the box (or find via "choose your files")
+- Click "Commit changes"
+
+While uploading a new file to a folder that already exists in your repository is fairly simple, creating a new folder in GitHub and uploading a new file to that folder can be suprisingly tricky (GitHub does not allow for the creation of new blank folders):
+
+To upload a new **code** file to a new folder:
+
+- Navigate to the main page of the repository
+- Click the "Upload files" button in the top right corner
+- After the `/` in the path name, type the name of the new **folder**
+- Type another `/`
+- Type the name of the file you would like to add (file extension included)
+- Paste the body of the code file into the code text box
+- Click "Commit new file" at the bottom
+
+To upload a new **non-code** file to a new folder:
+
+- Navigate to the main page of the repository
+- Click the "Upload files" button in the top right corner
+- After the `/` in the path name, type the name of the new **folder**
+- Type another `/`
+- Type `foo`. This will be a dummy file that we will delete in a moment
+- Click "Commit new file" at the bottom
+- Now you are in the folder you just created with the blank `foo` file. Click "Upload files" at the top right corner
+- Upload the new file and commit the new file.
+- Navigate back into the folder you created and delete the `foo` file.
+
+## Collaborating on GitHub
+GitHub's main function is to allow effective collaboration between coders. It has various tools geared towards this purpose. To get a sense of these tools at large, visit: https://guides.github.com/introduction/flow/
+
+Using branches is the most effective way to collaborate and using the above resource is the best way to explore that function. Here, we will walk you through a couple of more basic collaboration steps:
+
+### Adding collaborators
+To invite collaborators to your GitHub repository...
+
+- Navigating to your repository's main page
+- Click on "Settings"
+- Click on "Collaborators"
+- Add names of potential collaborators
+
+### Flagging issues
+To track code fixes and improvements, it is useful to open issues. Issues create a running "checklist" of action steps needed to finalize your code. They also allow collaborators to comment on progress or barriers to resolving those issues. To create an issue...
+
+- Navigating to your repository's main page
+- Click on "Issues"
+- Click on "New issue"
+- Title, write, and submit issue
+
+Issues can be commented on, edited, updated, and resolved as progress is made.
+
+## Add analysis to OpenSDP
+** Would like to coordinate how OpenSDP would like to do this before writing the guide for it **
