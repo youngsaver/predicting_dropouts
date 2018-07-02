@@ -6,7 +6,7 @@
 
 | File Column Location | Variable Title                   | Suggested R Name |Definition            | Type       | Range/Key               |
 | :-----               | :--------------                  | :-------         | :----------          | :------    | :---------------------- |
-| 1                  | GRADE LEVEL TESTED               | grade_level      | Grade level of test  | Numeric    | 03-08|
+| 1                  | GRADE LEVEL TESTED               | grade_level      | Grade level of test  | Numeric    | 3-8|
 | 2                 | COUNTY-DISTRICT-CAMPUS NUMBER    | school_code      | School ID            | Numeric    | NA                      |
 | 3                | STUDENT-ID                       | sid              | Student ID (Unique)  | Numeric    | NA                      |
 | 4                | SEX-CODE                         | male             | Sex (Binary)         | Factor     | M = Male <br> F = Female|
