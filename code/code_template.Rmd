@@ -65,14 +65,10 @@ The data used in this guide...**explain origin of data, key features of data, an
 | `male`          | Student gender                                      |
 | `race_ethnicity`| Student race/ethnicity                              |
 | `eco_dis`       | Student level of economic disadvantage              |
-| `title_1`       | Indicator if student attends Title 1 school         |
-| `migrant`       | Indicator if student is a migrant                   |
 | `lep`           | Level of Limited English Proficiency                |
 | `iep`           | Indicator if student enrolled in special education  |
 | `rdg_ss`        | Scale score for reading exam                        |
 | `math_ss`       | Scale score for math exam                           |
-| `wrtg_ss`       | Scale score for writing exam                        |  
-| `composition`   | Score on writing composition exam                   |
 
 #### Loading the OpenSDP Dataset and R Packages
 
@@ -144,18 +140,13 @@ This guide is an open-source document hosted on Github and generated using R Mar
 **Required Analysis File Variables:**
 
 - `grade_level` 
-- `school_code` 
 - `male`        
 - `race_ethnicity` 
 - `eco_dis`      
-- `title_1`     
-- `migrant`     
 - `lep`
 - `iep`
 - `rdg_ss`
 - `math_ss`
-- `wrtg_ss`
-- `composition`
 
 **Ask Yourself**
 
