@@ -199,3 +199,17 @@ Contains the following file(s):
 - **File type:** markdown
 - **Guide for usage**: Provide a brief description of the purpose of your analysis in place of "Inser goal of analysis here." Add attribution information for collaborators on the project or for any individual/organization that provided support to the project in any way. 
 
+## Updating GitHub
+When working with the above files on your computer locally, it is a good practice to periodically update the corresponding files in the GitHub repository. Doing so allows collaborators to see your progress and edits. In addition, GitHub allows you to compare previous file versions with updated file versions, line by line. This is particularly useful with respect to code files.
+
+There are multiple ways to update files in GitHub, some more complicated than others. Here, we show simple ways to make updates to two broad types of files:
+
+### Updating native GitHub files
+Some files, especially code files, are rendered natively in GitHub. This is true of markdown and Rmarkdown documents. To update such files, use a simple copy and paste method:
+
+- Click on the file name in GitHub
+- Click the pencil symbol in the upper right corner to edit the file
+- Click in the text box and select all the text by hitting `Ctrl`+`A`
+- Press `Delete`
+- Now go to your up-to-date local copy of the file. Copy all your code from your local copy of the file.
+- Paste your code into the empty box on GitHub
