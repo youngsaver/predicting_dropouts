@@ -16,7 +16,7 @@ This repository is organized in the following folder structure:
 - `docs` contains style assets to format the guides
 - `man` contains the manuals and descriptive files of the data
 
-These materials were originally authored by the Strategic Data Project.
+These materials were originally authored by **YOURE NAME HERE**.
 
 [OpenSDP](https://opensdp.github.io) is an online, public repository of analytic
 code, tools, and training intended to foster collaboration among education
