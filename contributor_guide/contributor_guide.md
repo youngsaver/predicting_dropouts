@@ -1,17 +1,20 @@
 ---
 title: "Guide for OpenSDP Contributors (in R)"
-author: "Author: OpenSDP"
+author: 'Author: OpenSDP'
 date: "July 13, 2018"
-output: 
+output:
   html_document:
-    theme: simplex
     css: ../docs/styles.css
-    highlight: NULL
-    keep_md: true
-    toc: true
+    highlight: null
+    keep_md: yes
+    number_sections: no
+    theme: simplex
+    toc: yes
     toc_depth: 3
-    toc_float: true
-    number_sections: false
+    toc_float: yes
+  word_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 <div class="navbar navbar-default navbar-fixed-top" id="logo">
@@ -74,9 +77,11 @@ Repositories in GitHub are (essentially) online folders of your work that allow 
 
 <br />
 
-This will open a page that allows you to name your repository and control its privacy settings. 
-**NOTE: Not sure which naming, read.me, and sharing conventions we want**
-Do NOT check the box "Initialize this repository with a README." The repository will eventually have a README file, but that will come later in the process.
+This will open a page that allows you to name your repository and control its privacy settings.
+
+- Please keep the name short and separate words with an underscore. For example, one repository name may be: `opensdp_grad_rate_analysis`. 
+- Make sure the repository is set to "Public." In the interest of transparency and usability, OpenSDP is committed to making resources that are open-source. Since the repository will be made public, please do not share sensitive information within your code or supporting documents, particularly private student data.
+- Do NOT check the box "Initialize this repository with a README." The repository will eventually have a README file, but that will come later in the process.
 
 Next, you will import the basic OpenSDP files that are present in all OpenSDP R projects and analyses. These files will allow you to authentically mimic the OpenSDP methods, functions, outputs, and styles in your analyses.
 
@@ -290,5 +295,5 @@ To track code fixes and improvements, it is useful to open issues. Issues create
 
 Issues can be commented on, edited, updated, and resolved as progress is made.
 
-## Add analysis to OpenSDP
-** Would like to coordinate how OpenSDP would like to do this before writing the guide for it **
+## Submit analysis to OpenSDP
+Once you have finalized your code (as well as supporting documents and repository structure), send an email to `sdp@gse.harvard.edu` to get your contribution reviewed and, eventually, uploaded to the OpenSDP website. Keep in mind that because OpenSDP is committed to open-source code and transparency, your entire repository will be shared publically. Please make sure there is no sensitive information, particularly private student data, in your submission.
