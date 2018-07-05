@@ -16,6 +16,7 @@ output:
 
 # Analysis Title
 *Caption*
+
 *Programmed in R*
 
 ## Getting Started
@@ -72,9 +73,9 @@ The data used in this guide...**explain origin of data, key features of data, an
 
 #### Loading the OpenSDP Dataset and R Packages
 
-This guide takes advantage of several key R packages. The first chunk of code below loads the R packages (make sure to install first!), and the second chunk loads the dataset and provides us with variable labels.**Feel free to add R packages to this, so long as they are common and trustworthy**
+This guide takes advantage of several key R packages. The first chunk of code below loads the R packages (make sure to install first!), and the second chunk loads the dataset.**Feel free to add R packages to this, so long as they are common and trustworthy**
 
-```{r packages, echo=FALSE}
+```{r packages, echo=TRUE}
 library(tidyverse) # main suite of R packages to ease data analysis
 library(magrittr) # allows for some easier pipelines of data #
 library(plyr)
@@ -95,35 +96,12 @@ source("../R/functions.R")
 # // Step 1: Read in csv file of our dataset, naming it "texas.data"
 df <- read.csv("../data/start_data.csv")  
 
-
-```
-
-
-```{r, cache=TRUE, message=FALSE, echo=FALSE}
-# Set the cache to true when using knitr to speed up future analyses
-#simouts <- simpop(nstu = 40000, seed = 8763434, 
-#                  control = sim_control(nschls = 12L, minyear=1996,
-#                                        n_postsec = 50L,
-#                                        n_cohorts = 3,
-#                                        maxyear=2017)) 
-#cgdata <- sdp_cleaner(simouts)
 ```
 
 
 ### About the Analyses
 
 **Describe purpose and methods of analyses here**
-
-### Sample Restrictions
-
-One of the most important decisions in running each analysis is defining the sample. 
-
-```{r setSampleRestrictions}
-# Read in global variables for sample restriction
-# Agency name
-#agency_name <- "Agency"
-
-```
 
 ### Giving Feedback on this Guide
  
@@ -133,7 +111,7 @@ This guide is an open-source document hosted on Github and generated using R Mar
 
 ### Exploratory Analysis
 
-**The following is an example of what the structure of an analysis component may look like**
+**The following is an example of what the beginning structure of an analysis component may look like**
 
 **Purpose:** Descriptive statistics give your agency a quick snapshot of current achievement gaps among students, identifying areas for further investigation and analysis.
 
@@ -154,7 +132,7 @@ This guide is an open-source document hosted on Github and generated using R Mar
 - Why do these differences occur?
 - What differences do you want to explore further?
 
-**Analytic Technique:** Calculate the summary statistics for exam performance, for all 5th and 8th grade exam takers. Note: Once you set which tests and which grade levels you would like to analyze here, the code (as written) will analyze those grade levels and tests for the rest of the guide.
+**Analytic Technique:** Calculate the summary statistics for exam performance, for all 5th and 8th grade exam takers. Summary statistics provide us with broad points of comparison before we start breaking down the data by student population.
 
 ```{r Averages, echo=TRUE}
 # // Step 1: Set which tested grade levels to analyze (5th and 8th here)
