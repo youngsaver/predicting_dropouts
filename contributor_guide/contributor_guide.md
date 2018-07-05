@@ -127,7 +127,11 @@ Contains the following file(s):
 - `code_template.Rmd` 
     - **File type:** R markdown 
     - **Description:** Contains code, descriptions, and summaries that render the final HTML analysis guide page, as displayed on OpenSDP's webiste.
-    - **Guide for use:** The R markdown code should follow a specific structure in terms of formatting descriptions, code chunks, headings, and attributions, so make sure to follow the template in the file. Every chunk of code should be accompanied by concise description of its purpose and outcome. A coding style guide can be found in the `contributor_guide` folder. The file must be R markdown. If you are new to using R markdown, don't fret: the coding functionality and syntax is essentially the same as it is in a normal R script. R markdown just contains extra functionality that allows you to put text and images alongisde your code and render it as an HTML, making it more user-friendly for our site's visitors. Here is a useful guide to using R markdown: https://bookdown.org/yihui/rmarkdown/basics.html. 
+    - **Guide for use:** 
+        - The R markdown code should follow a specific structure in terms of formatting descriptions, code chunks, headings, and attributions, so make sure to follow the template in the file. 
+        - Every chunk of code should be accompanied by concise description of its purpose and outcome. Specific descriptive components designed for the user to modify are marked by asterisks (rendered as bold print in markdown). For example, under "Objective," the template has: `In this guide, you will be able to...**explain objective here**`. The user is expected to write the objective in the space marked by `**explain objective here**`. 
+        - A coding style guide can be found in the `contributor_guide` folder. 
+        - The file must be R markdown. If you are new to using R markdown, don't fret: the coding functionality and syntax is essentially the same as it is in a normal R script. R markdown just contains extra functionality that allows you to put text and images alongisde your code and render it as an HTML, making it more user-friendly for our site's visitors. Here is a useful guide to using R markdown: https://bookdown.org/yihui/rmarkdown/basics.html. 
 
 ### Folder: `contributor_guide`
 **Purpose:** Houses this guide in addition to general coding style and data naming guides. 
