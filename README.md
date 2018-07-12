@@ -1,7 +1,8 @@
-# Put name of your analysis here
+# Predicting Dropout Students
 This repository contains web guides, R code, and sample
-data to help education data analysts answer questions about ***Insert
-goal of analysis here***. This material can also be accessed on the
+data to help education data analysts consider machine learning and predictive
+modeling techniques when developing early warning indictors for likely
+dropout students. This material can also be accessed on the
 OpenSDP website at [opensdp.github.io/analysis](https://opensdp.github.io/analysis).
 
 The code in this repository is based on code from the "Analyze" section of the
@@ -16,7 +17,7 @@ This repository is organized in the following folder structure:
 - `docs` contains style assets to format the guides
 - `man` contains the manuals and descriptive files of the data
 
-These materials were originally authored by **YOURE NAME HERE**.
+These materials were originally authored by Dashiell Young-Saver and Jared Knowles.
 
 [OpenSDP](https://opensdp.github.io) is an online, public repository of analytic
 code, tools, and training intended to foster collaboration among education
