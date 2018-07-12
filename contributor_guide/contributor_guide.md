@@ -23,14 +23,32 @@ output:
 </div>
 </div>
 
+## Contributor Guide
+
+The purpose of this document is to provide authors and contributors to the OpenSDP
+project with instructions on how to produce guidelines, tutorials, and tools
+that are suitable for publication and inclusion in the OpenSDP repository. This
+guide reviews some of the key features of an OpenSDP contribution, introduces
+potential contributors to GitHub, and explains the organizational structure
+of OpenSDP materials.
+
+### Key Features of Contributing to OpenSDP
+
+OpenSDP to facilitate open collaboration and open access to its materials uses
+the GitHub platform for sharing code, data, analyses, and documentation. GitHub
+is a powerful platform for collaboration around code and text, but does have a
+learning curve. This document is designed to help you get started using GitHub
+right away -- if you already have experience with git and GitHub then feel
+free to skip ahead to the sections on organization and structure of OpenSDP
+materials. 
 
 ## Getting Started
 The best way to get started contributing to OpenSDP is to explore model analyses
-on the OpenSDP website. We recommend checking out the "College Persistence"
-analyis in the R programming language on the OpenSDP Analysis page, here:
+on the OpenSDP website. We recommend reviewing the "College Persistence"
+analysis in the R programming language on the OpenSDP Analysis page, here:
 https://opensdp.github.io/analysis/.
 
-Within the OpenSDP Analysis page, the "College Persistence" analyis section will
+Within the OpenSDP Analysis page, the "College Persistence" analysis section will
 look like this:
 
 <br />
@@ -53,9 +71,9 @@ data. The intention is to make the analysis clear and accessible.
 Go back to the "College Persistence" section of the OpenSDP Analysis page
 (https://opensdp.github.io/analysis/) and click on "Download Code." The page
 that opens (displayed below) is the plain text version of the R Markdown code
-that generated the analysis guide. Data managers who use code from OpenSDP can
+that generated the analysis guide. Data analysts who use code from OpenSDP can
 easily copy and paste from these pages to get the code they need, without having
-to explore repositories on the back end. Or, if prefferred, they could simply
+to explore repositories on the back end. Or, if preferred, they could simply
 copy and paste from the code chunks within the guide HTML page.
 
 <br />
@@ -66,7 +84,7 @@ copy and paste from the code chunks within the guide HTML page.
 
 One last time, go back to the "College Persistence" section of the OpenSDP
 analysis page. Click on "Go to Repository." The page that opens (displayed
-below) is the GitHub "back end" to the analyis guide. The repository houses the
+below) is the GitHub "back end" to the analysis guide. The repository houses the
 data, functions, code, and all other materials needed to produce the guide.
 GitHub is a platform that allows for sharing and collaborating with open-source
 code. If you want to contribute to OpenSDP, you will have to get comfortable
