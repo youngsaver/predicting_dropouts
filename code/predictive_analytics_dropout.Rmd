@@ -1,0 +1,693 @@
+---
+title: "Predictive Analytics and Machine Learning"
+author: "Dashiell Young-Saver, Jared Knowles"
+date: "Jun 30, 2018 (Replace with date uploaded to OpenSDP)"
+output: 
+  html_document:
+    theme: simplex
+    css: ../docs/styles.css
+    highlight: NULL
+    keep_md: true
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: false
+---
+
+# Predicting students who will dropout
+*Using machine learning to create an early warning system of predicted dropouts*
+
+*Programmed in R*
+
+## Getting Started
+```{r knitrSetup, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment=NA}
+# Set options for knitr
+library(knitr)
+knitr::opts_chunk$set(comment=NA, warning=FALSE, echo=TRUE,
+                      root.dir = normalizePath("../"),
+                      error=FALSE, message=FALSE, fig.align='center',
+                      fig.width=8, fig.height=6, dpi = 144, 
+                      fig.path = "../figure/E_", 
+                      cache.path = "../cache/E_")
+options(width=80)
+```
+
+
+<div class="navbar navbar-default navbar-fixed-top" id="logo">
+<div class="container">
+<img src="../img/open_sdp_logo_red.png" style="display: block; margin: 0 auto; height: 115px;">
+</div>
+</div>
+
+### Objective
+
+In this guide, you will be able to use techniques in machine learning to tune, fit, and use a model that predicts likely dropouts in a school system.
+
+### Using this Guide
+
+This guide utilizes data from...**explain origin of data here** 
+
+Once you have identified analyses that you want to try to replicate or modify, click the 
+"Download" buttons to download R code and sample data. You can make changes to the 
+charts using the code and sample data, or modify the code to work with your own data. If 
+you are familiar with Github, you can click "Go to Repository" and clone the entire repository to your own computer. 
+
+Go to the Participate page to read about more ways to engage with the OpenSDP community or reach out for assistance in adapting this code for your specific context.
+
+### About the Data
+
+The data used in this guide is from the state of Kentucky. Here are the features: 
+
+| Feature name    | Feature Description                                 |
+|:-----------     |:------------------                                  |
+| `grade_level`   | Grade level of exam student took (3-8)              |
+| `school_code`   | School ID number                                    |
+| `sid`           | Student ID number                                   |
+| `male`          | Student gender                                      |
+| `race_ethnicity`| Student race/ethnicity                              |
+| `eco_dis`       | Student level of economic disadvantage              |
+| `lep`           | Level of Limited English Proficiency                |
+| `iep`           | Indicator if student enrolled in special education  |
+| `rdg_ss`        | Scale score for reading exam                        |
+| `math_ss`       | Scale score for math exam                           |
+
+
+## Introduction
+
+This file provides guidance and R syntax examples for the hands-on
+predictive analytics session during the Fall 2017 Cohort 8 Strategic Data
+Project Workshop in Philadelphia.
+
+During the workshop, we'll ask you develop a predictive college-going indicator
+for the state of Faketucky using student data collected through the end of 11th
+grade. You can take any approach you like to do this. Your goal is to make the
+best predictions possible, and then think about how the predictive model would
+work in the real world, and then recommend an indicator. In the real world, the
+indicator you recommend might or might not be the most predictive one--you might
+argue for one that is more useful because it gives predictions sooner in a
+student's academic career, or you might argue for one that is slightly less
+accurate but simpler and easier to explain.
+
+Logistic regression is one tool you can use, and we'll demonstrate it here.
+There are many other techniques of increasing complexity. (Many of the best
+predictive analytics packages are written in the R programming language.) But
+for a binary outcome variable, most data scientists start with logistic
+regressions, and those are very straightforward to do in R.
+
+Here are the steps:
+
+1. explore the data, especially college enrollment predictors and outcomes 
+2. examine the relationship between predictors and outcomes 
+3. evaluate the predictive power of different variables and select predictors for your model 
+4. make predictions using logistic regression 
+5. convert the predicted probabilities into a 0/1 indicator 
+6. look at the effect of different probability cutoffs on prediction accuracy (develop a "confusion matrix") 
+
+When you've been through those steps with your first model, you can submit it to
+Kaggle for scoring, and then iterate through the process again until you are
+satisfied with the results. 
+
+The commands in this script won't tell you everything you need to do to develop 
+your model, but they will give you command
+syntax that you should be able to adjust and adapt to get the project done.
+You can also take an even simpler approach, outlined in the Chicago Consortium
+on School Research CRIS technical guide assigned in the workshop pre-reading.
+With that "checklist" approach, you experiment with different thresholds for
+your predictor variables, and combine them to directly predict 0/1 values
+without using the predict command after running a logistic regression. The CCSR
+approach has the advantage of being easy to explain and implement, but it might
+not yield the most accurate predictions. We won't demonstrate that approach
+here, but if you want to try it you can draw on the syntax examples here and
+follow the instructions in the CCSR technical guide.
+
+Before you get started, you need to think about variables, time, and datasets.
+The sooner in a student's academic trajectory you can make a prediction, the
+sooner you can intervene--but the less accurate your predictions, and hence your
+intervention targeting, is likely to be. What data, and specifically which
+variables, do you have available to make predictions? What outcome are you
+trying to predict?
+It can be helpful to group the data you have available by time categories:
+pre-high school, early high school, late high school, and
+graduation/post-secondary. One fundamental rule is that you can't use data from
+the future to make predictions. If you're planning to use your model to make
+predictions for students at the end of 11th grade, for instance, and if most
+students take AP classes as seniors, you can't use data about AP coursetaking
+collected during senior year to predict the likelihood of college enrollment,
+even if you have that data available for past groups of students.
+
+In terms of datasets, you can develop your model and then test its accuracy on
+the dataset you used to develop the model, but that is bad practice--in the real
+world, your model is only as good as its predictions on different, out of sample
+datasets. It's good practice to split your data into three parts: one part for
+developing your model, one for repeatedly testing different versions of your
+model, and a third to use for a final out of sample test.
+
+We're using two cohorts of high-school students for the predictive analytics
+task--students who were ninth graders in 2009 and in 2010. In a production
+predictive analytics model for a school system, you might split data from the
+most recent cohort for which you have data into two parts for model development
+and testing, and then check the model against outcomes for the next year's
+cohort when it became available.
+
+For the workshop, though, we're using the online Kaggle competition platform to
+evaluate model accuracy and the data is split somewhat differently. The 2009
+data is available to you for model development. Kaggle has randomly split the
+2010 data, which you'll use to make predictions with your model for scoring,
+into two parts. Kaggle will show scoring results for the first part on a public
+leaderboard, but final scores will depend on how the model performs on the
+second half of the data.
+
+One last point--in the real world, you'll need to make predictions for every
+student, even if you're missing data for that student which your model needs in
+order to run. Just making predictions using a logistic regression won't be
+enough. You'll need to use decision rules based on good data exploration and
+your best judgment to predict and fill in outcomes for students where you have
+insufficient data.
+
+If you're using the `Rmd` file version of these materials, start by saving a new
+version of the file, so you can edit it
+without worrying about overwriting the original. Then work through the file
+inRStudio by highlighting one or a few command lines at a time, clicking the
+"execute" icon (or pressing control-enter), and then looking at
+the results in the R console. Edit or add commands as you wish. 
+
+If you're using a paper or PDF version of these materials, just read on--the R
+output appears below each section of commands.
+This script uses the 2009 cohort data, which has one observation (row) per
+student. Each observation contains data about demographics, academic
+performance, school and district enrollment, and high school and post-secondary
+outcomes. It also has information about the characteristics of the colleges that
+students attended. To work through this script, you need to put the
+`training_2009.csv` data file on your computer in a working folder of
+your choice, and then edit the commands below to
+tell R where to look for the data. If you have trouble doing this, ask for
+help from other members of your group.
+
+
+## Setup
+
+To prepare for this project you will need to ensure that your R installation 
+has the necessary add-on packages and that you can read in the training data. 
+
+```{r installPackages, eval=FALSE}
+# Install add-on packages needed
+install.packages("dplyr") # this will update your installed version to align with 
+install.packages("pROC") # those in the tutorial 
+install.packages("devtools")
+install.packages("elasticnet")
+install.packages("plotROC")
+```
+
+```{r loadWorkspace}
+# Load the packages you need
+library(dplyr)
+library(pROC)
+library(devtools)
+library(elasticnet)
+library(plotROC)
+library(caret)
+library(glmnet)
+
+
+# Load the helper functions not in packages
+devtools::source_gist("ed47cd156462a9900df1f77a000f4a52", 
+            filename = "helper_funcs.R")
+
+# Read in the data
+# This command assumes that the data is in a folder called data, below your 
+# current working directory. You can check your working directory with the 
+# getwd() command, and you can set your working directory using the RStudio 
+# environment, or the setwd() command.
+
+data <- read.csv("../data/training_2009.csv", stringsAsFactors = FALSE)
+```
+
+### Validate the data
+
+Ensure that the data imported correctly. 
+
+First, ensure that the data is unique by student ID.
+
+```{r OneRowPerStudent}
+nrow(data) == n_distinct(data$sid)
+```
+
+## Explore the Data
+
+Verify that the data includes just students who were ninth-graders in 2009
+
+```{r, echo=TRUE}
+table(data$chrt_ninth, useNA = "always")
+```
+
+Let's look at the variable we are trying to predict--or the "outcome" variable. We create tables to show the distribution of students marked dropouts and students not marked dropouts.
+
+```{r, echo=TRUE}
+table(data$dropout, useNA = "always")
+round((table(data$dropout, useNA = "always")/nrow(data))*100,2)
+
+```
+
+About 19% of students are marked as dropouts. We will keep this in mind for our analyses, as prediction models can sometimes be insensitive to predicting minority outcomes. There is no missing data for our outcome variable.
+
+What possible predictor variables could we use? Let's start by looking at student subgroups. 
+
+Here's a short for-loop to look at one-way tabs of a lot of variables at once.
+
+```{r, eval=FALSE}
+for(i in c("male", "race_ethnicity", "frpl_11", "sped_11", "lep_11", 
+           "gifted_11","ever_alt_sch_11")){
+  print(i)
+  print(table(data[, i], useNA="always"))
+}
+
+
+```
+
+We have 10 missing values for the gender indicator, 564 missing values for the race-ethnicity variable, and 560 missing values for the free/reduced lunch indicator. No other values are missing. Note that when we read the data in, `race_ethnicity` contains blank values that 
+are not marked as `NA` by R. Let's change that here:
+
+```{r}
+data$race_ethnicity[data$race_ethnicity == ""] <- NA
+table(data$race_ethnicity, useNA = "always")
+```
+
+Let's look at some possible continuous or ordinal predictor variables: 8th grade math and reading scores, percent absent from school, and cumulative GPA:
+
+```{r}
+for(i in c("scale_score_8_math","scale_score_8_read","pct_absent_11", "cum_gpa_11")){
+  print(summary(data[, i]))
+  hist(data[, i], main=i)
+}
+
+```
+
+We see very high outliers---impossibly high outliers. Let's truncate those and try again:
+
+```{r abs_trunc}
+for(i in c("scale_score_8_math","scale_score_8_read","pct_absent_11","cum_gpa_11")){
+  data[,i][data[,i] > 100] <- NA
+  hist(data[, i], main=i)
+}
+
+```
+
+We see very heavy right skew for percent absent: that may need to be transformed later to make it more normal in our modeling.
+
+## Train and Test
+
+In predictive modeling, it is key to create a "test" set of data. The test set is data that is not used in the model fitting stage of the analysis. In other words, it is data that goes "unseen" by the model until it is already formed. Then, you can "test" your model's predictive accuracy by using it to predict the outcomes on the previously unseen test set. It's accuracy on the test data provides an estimate of how accurate it would be in predicting outcomes for completely new data.
+
+The data that is used in the model fitting stage is called the "train" set, since its the data that is used to train your model's parameters. A conventional way to split a dataset between train and test sets i to randomly choose 80% of the data points to be in the train set, and 20% of the data points to be in the test set. This means that the bulk of the information is being used to fit the model, which should lead to a more accurate model (think about an extreme case: a model that fits around only one data point will not be very predictive--the more data, usually, the better). Fewer data points are needed to provide an estimate of predictive accuracy, thus the test set is smaller.
+
+```{r MissingData}
+#Selects variables we will use for prediction and outcome variable
+data.process <- data[, c("dropout",
+                             "male",
+                             "race_ethnicity",
+                             "scale_score_8_math",
+                             "scale_score_8_read",
+                             "gifted_11",
+                             "ever_alt_sch_11",
+                             "sped_11",
+                             "pct_absent_11",
+                             "cum_gpa_11",
+                             "frpl_11",
+                             "gifted_11",
+                             "lep_11")]
+
+#Vector of all factor variables
+factors <- c("dropout","male","race_ethnicity","gifted_11",
+             "ever_alt_sch_11","sped_11","frpl_11","gifted_11","lep_11")
+
+#Store factor variables as factor in data
+#Loop over feature names
+for(variable in factors){
+  
+  data.process[, variable] <- as.factor(as.character(data.process[, variable]))
+  
+}# End loop over feature names
+
+#TEMPORARY DROP ALL ROWS WITH NAs
+data.process <- data.process[complete.cases(data.process), ]
+
+```
+
+Now transform data
+
+For data that is highly right-skewed, perform the log transformation
+
+```{r DataTransform1}
+# // Investigate transformations
+#Visualize log transformation of percent absences
+hist(log(data.process$pct_absent_11))
+
+```
+
+Note that it transformed it too much, making it a left-skewed distribution. Would also not work if there is someone with 0% absent in future data (cannot take log of zero). A more moderate transformation would be raising it to a power below 1. We will try raising to the power of 0.5 (the square root transformation) and the power of 0.25.
+
+```{r DataTransform2}
+# // Investigate transformations
+#Visualize square root transformation
+hist(sqrt(data.process$pct_absent_11))
+
+#Visualize transformation of (1/4) power
+hist(data.process$pct_absent_11^0.25)
+
+```
+
+The square root transformation is not powerful enough, but the second transformation--raising to the power of 0.25--does the trick. The data looks a lot more normal. Thus, we save the data transformed by that power.
+
+```{r DataTransform3}
+#Store transformed data
+data.process$pct_absent_11 <- data.process$pct_absent_11^0.25
+
+```
+
+Now let's transform the left-skewed distribution. To transform a left-skewed distribution, often squaring the values is a good solution. Because GPA is non-negative, the order will be preserved even if we square the values.
+
+```{r DataTransform4}
+#Visualize square root transformation
+hist(data.process$cum_gpa_11^2)
+
+```
+
+Although not necessarily normal, the distribution at least appears more centered now, which will help in our modeling. We store this transformed version of the variable.
+
+```{r DataTransform5}
+#Store transformed data
+data.process$cum_gpa_11 <- data.process$cum_gpa_11^2
+
+```
+
+Now we can add polynomial predictors
+
+```{r PolyTerms}
+#Store factor variables as factor in data
+#Loop over feature names
+for(variable in c("scale_score_8_math","scale_score_8_read","pct_absent_11","cum_gpa_11")){
+  
+  #Create new column with feature raised to certain power
+  data.process[, paste(variable,"^2",sep="")] <- data.process[, variable]^2
+  data.process[, paste(variable,"^3",sep="")] <- data.process[, variable]^3
+  
+}# End loop over feature names
+
+```
+
+
+```{r TrainTestSplit, echo=TRUE}
+#Set seet
+set.seed(1738)
+
+#Create a vector of integers, which will be indeces for datasets
+indeces <- rownames(data.process)
+
+#Randomly sort these integers
+indeces <- sample(indeces, size = length(indeces), replace = FALSE)
+
+#Define number of data points for train set
+n.train <- round(nrow(data.process)*0.8,0)
+
+#Create train and test sets
+train_data <- data.process[indeces[1:n.train],]
+test_data <- data.process[indeces[(n.train+1):nrow(data.process)],]
+rownames(train_data) <- NULL
+rownames(test_data) <- NULL
+
+#Show dimensions of both datasets
+dim(train_data)
+dim(test_data)
+
+```
+
+Now process data
+
+```{r DataProcess, echo=TRUE}
+#Stores objection with informatoin on centering and scaling numeric data
+processor <- preProcess(train_data, method = c("center","scale"))
+
+#Centers and scales our training numberic data
+train_data_s <- predict(processor, train_data)
+test_data_s <- predict(processor, test_data)
+
+```
+
+
+## Cross validation and Model Fit
+
+**Explanation of cross validation here**
+
+The underlying structure of cross-validation is like this:
+
+```
+for each tuning parameter value
+  for each fold split in 'K' folds
+    fit model (using parameter value) on training parts of folds
+    test model prediction accuracy on test set fold
+    store prediction accuracy in a vector
+  take the average of the accuracy rates over 'K' folds
+  store average accuracy rate for the parameter value
+select the parameter value that produced the highest average classification accuracy rate
+
+```
+
+
+```{r crossvallambda}
+
+set.seed(4612)
+
+#Creates matrix of covariates
+X <- model.matrix(dropout ~ ., data = train_data)[,-1]
+
+#5 fold cross validation
+K <- 5
+
+#Empty storage vectors for accuracies
+accuracies <- vector(mode = "numeric", length=K)
+dropout.accuracies <- vector(mode = "numeric", length=K)
+
+#Initialize best accuracy place marker
+best.accuracy <- 0
+best.dropout.accuracy <- 0
+
+#Get indeces for folds
+flds <- createFolds(y=train_data$dropout, k=K, list=TRUE, returnTrain=TRUE)
+names(flds)[1] <- "training"
+
+#Make range of parameters to test
+powers <- seq(-7,7,0.1)
+lambdas <- 10**powers
+
+#Initialize vectors to store accuracies
+acc <- vector(mode = "numeric", length = length(powers))
+drop.acc <- vector(mode = "numeric", length = length(powers))
+
+#Loop marker
+j <- 0
+
+#Loop over all parameter options
+for(l in lambdas){
+  
+  #Counts loop runs
+  j = j + 1
+
+  #Loop over K folds
+  for(i in 1:K){
+      
+    #Sets indeces for values in folds
+    train.index <- flds[[i]] #80% of data used in training
+    test.index <- setdiff(rownames(train_data), flds[[i]]) #20% of data used to test
+    
+    #Select training covariates and outcomes
+    X.train <- X[train.index,]
+    out.train <- train_data[train.index, "dropout"]
+    
+    #Fit with lambda
+    model <- glmnet(x = X.train, 
+                    y = out.train, 
+                    family = "binomial", alpha = 1, lambda = l)
+    
+    #Select test covariates and outcomes
+    X.test <- X[test.index,]
+    observed <- train_data[test.index, "dropout"]
+    
+    #Make predictions on test data
+    probabilities <- predict(model, newx = X.test)
+    predicted <- ifelse(probabilities > 0.81, 1, 0)
+    
+    # Model accuracy
+    accuracies[i] <- mean(predicted == observed) #overall accuracy
+    dropout.accuracies[i] <- mean(predicted[observed==1] == observed[observed==1])
+      
+  }#End loop over k folds
+  
+  #Average accuracies from all folds
+  new.accuracy <- mean(accuracies)
+  new.drop.accuracy <- mean(dropout.accuracies)
+  acc[j] <- new.accuracy
+  drop.acc[j] <- new.drop.accuracy
+  
+  #See if new accuracy is best accuracy
+  if(new.accuracy > best.accuracy){
+    
+    #Stores as new best accuracy, and its parameter
+    best.accuracy <- new.accuracy
+    best.param <- lambdas[j]
+    best.accuracy.dropout <- new.drop.accuracy 
+    
+  }#End conditional
+  
+  #See if new dropout accuracy is best dropout accuracy
+  if(new.drop.accuracy > best.dropout.accuracy){
+    
+    #Stores as new best dropout accuracy, and its parameter
+    best.dropout.accuracy <- new.drop.accuracy
+    best.dropout.param <- lambdas[j]
+    best.dropout.accuracy.overall <- new.accuracy 
+    
+  }#End conditional
+  
+}#End loop over hyperparameter
+
+#Create dataframe for plotting
+plot_frame <- data.frame(lambda = lambdas,
+                         overall.accuracy = acc,
+                         dropout.accuracy = drop.acc)
+
+#Shows overall accuracy at different lambda values
+lineplot.overall <- ggplot(plot_frame[1:30,], aes(lambda))+
+              geom_smooth(aes(y = overall.accuracy), color = "dodgerblue2")+
+              scale_x_continuous(trans ='log10')
+            
+
+lineplot.overall
+
+#Shows dropout accuracy at different lambda values
+lineplot.dropout <- ggplot(plot_frame[1:40,], aes(lambda))+
+              geom_smooth(aes(y = dropout.accuracy), color = "dodgerblue2")+
+              scale_x_continuous(trans ='log10')
+
+lineplot.dropout
+
+print(paste("Best overall accuracy:",best.accuracy))
+print(paste("Lambda for best overall accuracy:",best.param))
+print(paste("Accuracy for dropout subgroup:",best.accuracy.dropout))
+cat('\n')
+print(paste("Best dropout accuracy:",best.dropout.accuracy))
+print(paste("Lambda for best dropout accuracy:",best.dropout.param))
+print(paste("Overall accuracy:",best.dropout.accuracy.overall))
+
+
+```
+
+Our cross-validation shows us the value of the Lasso's penalty factor--lambda--that maximized prediction accuracy across the 5-fold test sets. However, one key element to focus on is not just the overal accuracy in predictions, but also the accuracy in predicting specifically the students who will drop out. Dropouts only compose about 19% of our dataset. So, if we naively predicted that no students dropped out, we'd already be predicting with about 81% accuracy. 
+
+However, a false positive in this context is much better than a false negative. The reason it is useful to predict which students will dropout is that we can use that prediction to target likely dropouts with anti-dropout interventions. If our goal is to minimzie the number of dropouts, giving a dropout intervention to a non-dropout student (a false positive) has far fewer costs than failing to provide interventions to a student who would otherwise drop out (a false negative). A student who receives a drop out intervention will most likely benefit from that intervention, regardless of whether or not they would have dropped out without it. By contrast,a student who fails to receive a dropout intervention and drops out of school will likely face great hardships because of it. Therefore, if our model will be biased either towards predicting more dropouts than there actually are or predicting fewer dropouts than there actually are, we'd want it to over-predict dropouts. In other words, we will take more false alarms if it means less false negatives.
+
+We will select the lambda parameter that yielded the highest prediction accruacy overall in cross validation (this parameter did almost just as well predicting within the dropout group as the parameter than maximized prediction accuracy within the dropout group). 
+
+Note that this can be done in several lines using more functions in the `caret` package:
+
+```{r CaretKFold}
+
+#Prepare outcome data as a factor
+train_data_car <- train_data_s
+train_data_car$dropout <- as.factor(as.character(train_data_car$dropout))
+levels(train_data_car$dropout) <- c("X0","X1")
+
+#Set seed
+set.seed(4612)
+
+#Sets type of cross-validation in training fucntion
+TC <- trainControl(method = "cv",
+                   number = K)
+
+
+#Trains ands fits model using cross-validation
+lasso.model <- train(dropout~., train_data_car, method = "glmnet",
+                     tuneGrid = expand.grid(.alpha = 1,
+                                             .lambda = 10**seq(-7,7, by = 0.1)),
+                     trControl = TC,
+                     metric = "Accuracy",
+                     family = "binomial")
+
+#Shows best tuning parameter in model
+lasso.model$bestTune["lambda"]
+
+#Shows performance of model
+getTrainPerf(lasso.model)
+
+#Shows coefficients in model
+coef(lasso.model$finalModel, lasso.model$bestTune$lambda)
+
+```
+
+### Fitting with ROC instead of accuracy
+
+```{r ROCFit}
+
+#Set seed
+set.seed(4612)
+
+#Gives function output and cross-validation tuning
+TC <- trainControl(method = "cv",
+                   number = K,
+                   classProbs = TRUE,
+                   savePredictions = TRUE,
+                   summaryFunction = twoClassSummary)
+
+#Trains model with method AUC
+model.ROC <- train(dropout~., train_data_car, method = "glmnet",
+              metric = "ROC",
+              tuneGrid = expand.grid(.alpha = 1,
+                                     .lambda = 10**seq(-7,7, by = 0.1)),
+              trControl = TC)
+
+
+#Best paramter chosen
+model.ROC$bestTune["lambda"]
+
+#Shows performance on subgroups and ROC
+getTrainPerf(model.ROC)
+
+#Shows coefficients in model
+coef(model.ROC$finalModel, model.ROC$bestTune$lambda)
+
+#Get indeces for best model lambda
+roc.index <- model.ROC$pred$lambda == model.ROC$bestTune[["lambda"]]
+
+#Plot ROC curve for best model
+ggplot(model.ROC$pred[roc.index, ], 
+        aes(m = X1, d = factor(obs, levels = c("X0", "X1"))))+ 
+        geom_roc(hjust = -0.4, 
+                 vjust = 1.5, 
+                 n.cuts = 13,
+                 labelround = 2)+ 
+        coord_equal()+
+        ggtitle("ROC Curve (Best Training Model)")
+
+```
+
+
+We determine that we should use the cut point of 0.10. So now we make our final predictions with our best model and with our chosen cut point
+
+## Model prediction
+
+```{r Prediction}
+#Predicts probabilities of dropping out on test data
+
+pred.probs <- predict(model.ROC, newdata = test_data_s[, -1], type = "prob")
+predicted <- ifelse(pred.probs > 0.1, 1, 0) #Uses determined cutpoint to make predictions
+observed <- test_data_s[, "dropout"]
+
+#Overall accuracy
+print('Overall test set accuracy')
+mean(predicted == observed)
+
+#Accuracy for dropouts
+print('Accuracy for dropouts')
+mean(predicted[observed==1] == observed[observed==1])
+
+```
+
