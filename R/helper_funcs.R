@@ -1,3 +1,16 @@
+#Calculates the mode
+#Takes as input a vector 'x', outputs mode
+Mode <- function(x) {
+  
+  #Drop missing values from calculation
+  y <- x[complete.cases(x)]
+  
+  #Finds mode
+  unique.y <- unique(y)
+  return(unique.y[which.max(tabulate(match(y, unique.y)))])
+}
+
+
 # Calculate the AUC of a GLM model easily
 # Jared Knowles
 # model = a fitted glm in R
