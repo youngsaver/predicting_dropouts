@@ -160,8 +160,7 @@ library(gmodels)
 
 
 # Load the helper functions not in packages
-devtools::source_gist("ed47cd156462a9900df1f77a000f4a52", 
-            filename = "helper_funcs.R")
+source("../R/helper_funcs.R")
 
 # Read in the data
 # This command assumes that the data is in a folder called data, below your 
@@ -358,7 +357,9 @@ hist(data$pct_absent_11^0.25)
 
 ```
 
-The square root transformation is not powerful enough, but the second transformation--raising to the power of 0.25--does the trick. The data looks a lot more normal. Thus, we save the data transformed by that power.
+The square root transformation is not powerful enough, but the second 
+transformation--raising to the power of 0.25--does the trick. The data looks 
+a lot more normal. Thus, we save the data transformed by that power.
 
 ```{r DataTransform3}
 #Store transformed data
@@ -469,7 +470,17 @@ is likely to dropout of school. If we use a simple imputation method to
 get rid of missing values, we could lose that key information. Our final 
 model, therefore, would be less accurate in its predictions.
 
-To gauge the amount of predictive information a missing value provides, we will run a simple logistic regression on our training dataset. Logistic regression provides us an elementary model for binary classification, in which we can make a preliminary judgement of the power of each predictor. We will create indicator values for missingness, which will become additional predictors in our logistic regression model. For example, we will create a variable that reads "1" if the student has missing data for their 8th grade math test, and "0" if the data is present. Then, the size of the coefficient for this indicator from our logistic regression will tell us if adding this extra variable may add any predictive power to our final model.
+To explore the amount of predictive information a missing value may provide, 
+we will run a simple logistic regression on our training dataset. Logistic 
+regression provides us an elementary model for binary classification, in 
+which we can make a preliminary judgement of the power of each predictor. 
+We will create indicator values for missingness, which will become additional 
+predictors in our logistic regression model. For example, we will create 
+a variable that reads "1" if the student has missing data for their 
+8th grade math test, and "0" if the data is present. Then, the size 
+of the coefficient for this indicator from our logistic regression 
+will tell us if adding this extra variable has a chance to add any predictive 
+power to our final model.
 
 We implement this below:
 
@@ -482,17 +493,6 @@ missing.features <-   c("male",
                         "pct_absent_11",
                         "cum_gpa_11",
                         "frpl_11")
-
-#Function for calculating the mode
-Mode <- function(x) {
-  
-  #Drop missing values from calculation
-  y <- x[complete.cases(x)]
-  
-  #Finds mode
-  ux <- unique(y)
-  ux[which.max(tabulate(match(y, ux)))]
-}
 
 #Stores copy of our training data
 data.miss <- train_data
@@ -516,7 +516,7 @@ for(feature in colnames(data.miss)){
   #If feature is a factor variable
   if(class(data.miss[,feature]) == "factor"){
     
-    #Impute the mode for missing values
+    #Impute the mode for missing values (use helper functino 'Mode')
     data.miss[is.na(data.miss[,feature]) ,feature] <- Mode(data.miss[,feature])
     
   }#End if conditional 
@@ -536,11 +536,34 @@ summary(logit)$coef[,c(1,4)]
 
 ```
 
-In our basic logistic regression model, some of our most powerful predictors are the missingness indicators we added to the dataset, including the indicators for missing values in GPA, 8th grade math scores, 8th grade reading scores, and percent attendance.
+In our basic logistic regression model, some of our most powerful 
+predictors are the missingness indicators we added to the dataset, 
+including the indicators for missing values in GPA, 8th grade math 
+scores, 8th grade reading scores, and percent attendance. This shows
+that the missingness contains key information that could help our
+final model with predictions.
 
-The gender and race-ethnicity predictors had a relatively low number of missing values. The predictive strength of their indicators is also relatively low, in our basic logistic regression. Even though the free and reduced lunch variable had a more moderate number of missing vlaues, the inclusion of a missingness indicator did not add much predictive power to our basic model.
+The gender and race-ethnicity predictors had a relatively low number 
+of missing values. The predictive strength of their indicators is 
+also relatively low, in our basic logistic regression. Even though 
+the free and reduced lunch variable had a more moderate number 
+of missing vlaues, the inclusion of a missingness indicator 
+did not add much predictive power to our basic model.
 
-Since the indicators of missing values for GPA, 8th grade math scores, 8th grade reading scores, and percent attendance were particularly poweful, we will add these indicators to our training and testing datasets. Hopefully, their inclusion will give our final model more information and therefore, make it more powerful. As done in our basic logistic regression model, all missing values will be given a mean or mode imputation, allowing us to be computationally efficient and to prevent cutting students from our model fitting or predictions.
+Since the indicators of missing values for GPA, 8th grade math 
+scores, 8th grade reading scores, and percent attendance were 
+particularly poweful, we will add these indicators to our 
+training and testing datasets. Hopefully, their inclusion 
+will give our final model more information and therefore, make 
+it more powerful. As done in our basic logistic regression model, 
+all missing values will be given a mean or mode imputation, 
+allowing us to be computationally efficient and to prevent 
+cutting students from our model fitting or predictions.
+
+Note: adding too many predictors to a prediction model can lead to
+overfitting and worse prediction accuracy on out-of-sample data.
+We will account for this convern during the model fitting stage,
+in the cross validation section.
 
 ```{r missingtrain}
 #All our features that will get a missingness indicator
@@ -587,7 +610,21 @@ for(feature in colnames(train_data)){
 summary(train_data)
 ```
 
-Now we can add polynomial predictors
+### Polynomial Terms
+
+Sometimes, the outcome from a model may vary linearly with
+the predictors. Other times, the variation may have a quadratic
+or higher-order polynomial relationship. Adding polynomial transformations
+of our predictor variables can help better capture this relationship and
+could lead to better predictions from the model. 
+
+Again, note: adding too many predictors to a prediction model can lead to
+overfitting and worse prediction accuracy on out-of-sample data.
+We will account for this convern during the model fitting stage,
+in the cross validation section.
+
+Here, we attach additional polynomial transformed features to our
+dataset:
 
 ```{r PolyTerms}
 # // Create polynomial terms
@@ -601,7 +638,19 @@ for(variable in c("scale_score_8_math","scale_score_8_read","pct_absent_11","cum
 }# End loop over feature names
 ```
 
-Now process data
+### Standardize and Center
+
+Finally, we will standardize our numeric predictors to have a standard
+deviation of one and center them at zero. Doing so helps with rounding 
+considerations and reduces the chance of collinearity between predictors.
+
+The `caret` package has multiple functions that help with the typical
+steps involved in machine learning. Here, the package's `preProcess` function
+will allow us to standardize and center our predictors in just two lines.
+The function finds the standard deviation and mean for each predictor.
+Next, it subtracts each observation by the mean (centering it at zero)
+and then divides each value by the standard deviation (to standardize
+it).
 
 ```{r DataProcess, echo=TRUE}
 #Stores objection with informatoin on centering and scaling numeric data
@@ -613,24 +662,112 @@ train_data_s <- predict(processor, train_data)
 ```
 
 
-## Cross validation and Model Fit
+## Cross-Validation and Model Fit
 
-**Explanation of cross validation here**
+### Overfitting: An Example
 
-The underlying structure of cross-validation is like this:
+The most important stage of the predictive modeling process is 
+cross-validation. Let's go through a simple example to elucidate why:
+
+Say you are running a simple regression. There is one predictor 
+variable, X, and there is one outcome variable, Y. Below, we visualize three
+possible models one could use to predict Y given X:
+
+<img src="../img/overfitting.png" style="display: block; margin: 0 auto; height: 170px;">
+
+The three sample regression equations that produce these models are:
+
+Left Panel: $Y = \Beta_{0} + \Beta_{1}X $
+Middle Panel: $Y = \Beta_{0} + \Beta_{1}X + \Beta_{2}X^{2} $
+Right Panel: $Y = \Beta_{0} + \Beta_{1}X + \Beta_{2}X^{2} + \Beta_{3}X^{3} + \Beta_{4}X^{4} + \Beta_{5}X^{5}$
+
+Let's evaluate the first, left-most model. This model is too simple,
+as it tries to map a linear model to a clearly curved relation between
+our X and Y values. If we had to predict new out-of-sample data from the 
+same population, we wouldn't be confident in our predictions. Particularly
+if we were to preict Y values from X values in the center of our distribution,
+our predictions would generally be overestimates, so we see that this model 
+is biased.
+
+Another attempt we could make at modeling is to add a couple of polynomial predictors,
+to better captured the curved trend we see in the data. This model is shown in the middle
+panel. Although this model doesn't perfectly "connect the dots" in the given data, we can
+be reasonably certain that it will provide relatively reasonable estimates on new
+data. It assumes a polynomial shape to the data with some random noise around that 
+shape. 
+
+Why  not go for broke and try to perfectly model this data? We can do so by adding 
+even more polynomial terms to our set of predictors. Let's look at the right-most 
+panel. This model, which is our most complex in terms the number of predictors,
+has no bias on the given data--it perfectly models each point. However, for new data,
+we cannot be so confident this model will still "connect the dots." In fact, it will
+most likely do a sub-optimal job at predicting new data, since its many twists and turns
+are modeling random noise, rather than the underlying trend in the distribution. Unlike 
+the first model, this model has low bias on our training data; however, because 
+it models random noise, it has high variance, which will lead to sub-optimal 
+predictions on out-of-sample data.
+
+The left-most model is "underfit," meaning it has low variance but high bias--it is
+not capturing the underlying trend in our data. Underfit models do a poor job modeling
+the given training data, and they do a poor job predicting new out-of-sample data.
+The right-most model is "overfit," meaning it has low bias but high variance--it is
+attempting to systematically model the random noise in our given data. Overfit models
+do an excellent job modeling our given training data, but they do a poor job predicting
+new out-of-sample data. 
+
+The goal in making a prediction model is to "tune" our model so that it is not underfit
+or overfit. The Lasso provides a way to do this. 
+
+### The Lasso's Penalty
+
+The Lasso binary classification model is based on logistic regression. The danger with
+using logistic regression for predicting new data is that we may overfit our model, by
+either using too many predictors (as with the example above) or having Beta coefficient
+values that are too high in magnitude--that are too strong. The Lasso has a built-in
+"tuning parameter", $\Lambda$, which acts as a penalty factor on our Betas. If a 
+predictor's Beta value is so strong that it will start to cause our model to fit to noise,
+it will reduce the Beta value. Or, if a certain feature doesn't really help our model
+explain variation in the data enough, it will penalize the Beta to a value of 0, effectively
+cutting out that predictor from our model completely.
+
+The trick is that if we make the penalty factor, $\Lambda$, too high, it will
+penalize our Beta values too much and our model may underfit the data. If we set $\Lambda$
+too low, the penalty will not be great enough to prevent overfitting. So that begs the
+question: how do we find the best possible value for $\Lambda$?
+
+### K-fold cross-validation
+
+That is where cross-validation comes in. Here, we take you through K-fold cross-validation.
+In K-fold cross validation, we cut our data into 'k' folds. For example, say we had 100
+data points and we wanted to do k = 5 folds. We take our data and slice it into 5 equal
+portions (so 20 data points in each portion). Then, for a certain value of $\Lambda$, 
+we fit a Lasso model on the first four portions of the data. The last portion (the last 20
+data points) is saved as a mock 'test set'. We see how well our model does in predicting 
+values on this test set. We then delegate a different slice of the data to be the new test 
+set, and we fit our model on the other four folds. We iterate this process five times 
+until each slice of the data has been the test set at least once. Every time we iterate
+through one of the k folds, we save the predicition accuracy of the model. Then we average
+these accuracies to come up with a predicted accuracy for a model of that $\Lambda$. By 
+delegating a portion as a test set, this method allows us to estimate prediction accuracy on out-of-sampled data. We then do the above process for a set of $\Lambda$ values we'd like
+to try. The tuning parameter value that produces the best prediction accuracy in
+cross-validation is the value we will use in our final model.
+
+Here is pseudocode that succintly summarizes the structure of cross-validation:
 
 ```
 for each tuning parameter value
-  for each fold split in 'K' folds
-    fit model (using parameter value) on training parts of folds
+  for each of the 'k' folds
+    fit model (using parameter value) on training sets of fold
     test model prediction accuracy on test set fold
     store prediction accuracy in a vector
-  take the average of the accuracy rates over 'K' folds
+  take the average of the accuracy rates over 'k' folds
   store average accuracy rate for the parameter value
-select the parameter value that produced the highest average classification accuracy rate
+select the parameter value that produced the highest accuracy rate
 
 ```
-
+Now we manually implement cross-validation on our own training data, using the Lasso.
+Note that we are using functions from the `caret` package here to produce the k-folds,
+and we are using `glmnet` to fit the Lasso model. 
 
 ```{r crossvallambda}
 #
@@ -760,13 +897,19 @@ select the parameter value that produced the highest average classification accu
 
 ```
 
-Our cross-validation shows us the value of the Lasso's penalty factor--lambda--that maximized prediction accuracy across the 5-fold test sets. However, one key element to focus on is not just the overal accuracy in predictions, but also the accuracy in predicting specifically the students who will drop out. Dropouts only compose about 19% of our dataset. So, if we naively predicted that no students dropped out, we'd already be predicting with about 81% accuracy. 
+Our cross-validation shows us the value of the Lasso's penalty 
+factor, $\Lambda$, that maximized prediction accuracy across the 5-fold 
+test sets: `r best.param`. The accuracy this tuning parameter value 
+produced was `r round(best.accuracy, 2)`. This is a percent signifying 
+that, among all the test set data points in cross-valdiation, our models 
+predicted whether the student would or would not drop out correctly
+`r round(best.accuracy*100, 2)`percent of the time.
 
-However, a false positive in this context is much better than a false negative. The reason it is useful to predict which students will dropout is that we can use that prediction to target likely dropouts with anti-dropout interventions. If our goal is to minimzie the number of dropouts, giving a dropout intervention to a non-dropout student (a false positive) has far fewer costs than failing to provide interventions to a student who would otherwise drop out (a false negative). A student who receives a drop out intervention will most likely benefit from that intervention, regardless of whether or not they would have dropped out without it. By contrast,a student who fails to receive a dropout intervention and drops out of school will likely face great hardships because of it. Therefore, if our model will be biased either towards predicting more dropouts than there actually are or predicting fewer dropouts than there actually are, we'd want it to over-predict dropouts. In other words, we will take more false alarms if it means less false negatives.
-
-We will select the lambda parameter that yielded the highest prediction accruacy overall in cross validation (this parameter did almost just as well predicting within the dropout group as the parameter than maximized prediction accuracy within the dropout group). 
-
-Note that this can be done in several lines using more functions in the `caret` package:
+Above, we implemented the cross-validation manually, in order to show 
+the structure of cross-validation, However, this is rarely done in 
+practice. The `caret` package includes useful tools for training models 
+via cross-validation. We demonstrate the same cross-validation process below, 
+using functions from `caret`.
 
 ```{r CaretKFold}
 #Set k for k-fold validation
@@ -800,15 +943,105 @@ lasso.model$bestTune["lambda"]
 getTrainPerf(lasso.model)
 
 #Shows coefficients in model
-coef(lasso.model$finalModel, lasso.model$bestTune$lambda)
+#coef(lasso.model$finalModel, lasso.model$bestTune$lambda)
 
 ```
 
-### Fitting with ROC instead of accuracy
+### Unbalanced Classes
+
+We could take our fairly high classification accuracy and call it a day.
+However, overall classification accuracy is not the only metric that could 
+be used to evaluate a predictive model's fit. In fact, in this case, it 
+is a particularly poor metric.
+
+Dropouts only compose about 19% of our dataset. If we naively predicted
+that no students dropped out, our overall classification accuracy would be
+81%. Although this accuracy rate seems fairly high, such a model would be
+useless for the task of predicting future dropouts, since the model would 
+classify all future dropouts as non-dropouts.
+
+Our cross-validation was run trying to find the $\Lambda$ value that maximized
+overall classification accuracy. In doing so, we ran the danger of using a tuning
+parameter value that would maximize overall accuracy, at the cost of predictive
+power among future dropouts. We can tell from the output of the cross-validation
+that our chosen model would do pretty horrendously in predicting future
+dropouts: Among students in our training dataset who were labeled as a dropout, 
+our 'best' model only predict `r round(best.accuracy.dropout*100, 2)`percent of 
+them to drop out.
+
+We need to use a method other than overall classification accuracy, which takes into
+account our classification goals. Our goals are two-fold: 
+
+1. Maximize true positives: We want to classify, at high rates, 
+future dropouts as 'dropouts.' If our model fails to identify future dropouts,
+it has failed in its mission. Planned interventions will not reach the
+students who need it.
+
+2. Minimize false positives: We want to minimize, as much as possible,
+instances in which a non-dropout is predicted to be a dropout by our model. 
+Interventions for likely dropout students can be costly--if our model tells
+policymakers to target students with dropout interventions and those students
+are not students who otherwise would have dropped out, then we create costly 
+inefficiency. 
+
+### The ROC Curve
+
+A metric that takes both of our goals into account is the receiver operating
+characteristic, or the ROC. To understand the ROC, it helps to think through how
+the Lasso, and classification models like it, make predictions.
+
+The Lasso does not automatically output predictions. Rather, it outputs
+probabilities. For example, our model may predict that a certain student's 
+probability of dropping out is 40%. It's then up to the user to determine if we 
+want to predict this person to be a dropout or a non-dropout. The probability
+threshold at which we declare a "dropout" is known as the 'cutoff.'
+
+If we set our cutoff low, then the criteria for our model to declare an observation
+as a dropout is less strenuous. As a result, we will have a higher true positive 
+rate. At the same time, we will make more mistakes, creating more false positives. 
+By the same token, raising the cutoff creates fewer false positives, but it also creates
+fewer true positives. This creates a continuum of true and false positive rates based
+on cutoff values that is often visualized as the 'ROC curve'. Here is an example
+of an ROC curve:
+
+<img src="../img/roc_example.png" style="display: block; margin: 0 auto; height: 250px;">
+
+The labeled points on the curve are cutpoints. As the cutpoints decrease in value, the
+true positive rate increases, as does the false positive rate. As the cutpoints increase
+in value, the true positive rate decreases in value, as does the false positive rate. 
+The goal of the model is to push this curve as far to the upper-left corner of the graph
+as possible--to the area with high true positive rate and low false positive rate. So,
+we want to perform a cross-validation to tune our $\Lambda$ to the value that produces the 
+best--the most shifted upwards and left--ROC curve. A way to distill the "best" ROC curve
+is to take the area under the curve, also known as the 'AUC.' The higher the AUC, the more
+shifted (and stretched) our ROC curve is to the upward-left corner of the graph. The highest
+AUC model will have cutpoints that that produce the lowest false positive rates and highest
+true positive rates. 
+
+So, we will run another cross-validation, this time using AUC as the model evaluation
+metric, rather than overall classification accuracy. Here is pseudocode for the process:
+
+```
+for each tuning parameter value
+  for each of the 'k' folds
+    fit model (using parameter value) on training sets of fold
+    test model AUC on test set fold
+    store AUC in a vector
+  take the average of the AUC over 'k' folds
+  store average AUC for the parameter value
+select the parameter value that produced the highest average AUC
+
+```
+Note that this can be done again in the `caret` package, with slight modifications:
+
+### Fitting with ROC
 
 ```{r ROCFit}
 #Set seed
 set.seed(4612)
+
+#Set k for k-fold validation
+K = 5
 
 #Gives function output and cross-validation tuning
 TC <- trainControl(method = "cv",
@@ -845,16 +1078,33 @@ ggplot(model.ROC$pred[roc.index, ],
                  n.cuts = 13,
                  labelround = 2)+ 
         coord_equal()+
-        ggtitle("ROC Curve (Best Training Model)")
+        ylab("True Positive Rate")+
+        xlab("False Positive Rate")+
+        ggtitle("ROC Curve on Training Data")
 
 ```
 
+Our cross-validation shows us the value of the Lasso's penalty 
+factor, $\Lambda$, that maximized AUC across the 5-fold test sets: 
+`r model.ROC$bestTune[["lambda"]]`. The AUC this tuning parameter value 
+produced was `r round(model.ROC$bestTune[["lambda"]], 2)`. The ROC
+curve generated from this model during cross-validation is visualized
+above.
 
-We determine that we should use the cut point of 0.10. So now we make our final predictions with our best model and with our chosen cut point
+So, with this cross-validation, we have tuned $\Lambda$ and fitted
+our model. Now, we just need to estimate our accuracies on the 
+out-of-sample test set.
 
-## Model prediction
+## Test Set Prediction
 
-Do same data processing to test set
+### Process Test Data
+
+Just as we processed the training data by removing missing values, adding predictors, and
+centering/standardizing features, we will do the same to our test data. It is important to
+only use values for mean/mode imputation and standardization that were determined during 
+training, as we are trying to mimic our model's performance on true out-of-sample prediction.
+
+We start with adding a missingness indicator and imputating missing values.
 
 ```{r missingtest}
 #Loop over features to include missing indicators for
@@ -895,7 +1145,7 @@ for(feature in colnames(test_data)){
 summary(test_data)
 ```
 
-Now we can add polynomial predictors
+Now we can add polynomial predictors.
 
 ```{r PolyTermstest}
 #Store factor variables as factor in data
@@ -910,7 +1160,7 @@ for(variable in c("scale_score_8_math","scale_score_8_read","pct_absent_11","cum
 
 ```
 
-Now process data
+Now we can center and standardize.
 
 ```{r DataProcesstest, echo=TRUE}
 #Centers and scales our testing numberic data (based on train data)
@@ -918,25 +1168,108 @@ test_data_s <- predict(processor, test_data)
 
 ```
 
-Make prediction
+### Making Predictions
+
+Finally, we make our predictions on the test data. We will generate our final ROC curve
+to evaluate our out-of-sample performance at various cutpoints. 
 
 ```{r Prediction}
 #Predicts probabilities of dropping out on test data
 pred.probs <- predict(model.ROC, newdata = test_data_s[, -1], type = "prob")
-predicted <- ifelse(pred.probs > 0.12, 1, 0) #Uses determined cutpoint to make predictions
+
+#Stores actual test data outcomes (and re-level)
 observed <- test_data_s[, "dropout"]
+levels(observed) <- c("X0","X1")
 
-#Overall accuracy
-print('Overall test set accuracy')
-mean(predicted == observed)
+#Make into dataframe fro plotting
+ROC.plot.frame <- data.frame(X1 = pred.probs$X1,
+                             obs = factor(observed, levels = c("X0","X1")))
 
-#Accuracy for non-dropouts
-print('Accuracy for non-dropouts')
-mean(predicted[observed==0] == observed[observed==0])
+#Plot ROC curve for test set
+ggplot(ROC.plot.frame, 
+        aes(m = X1, d = obs))+ 
+        geom_roc(hjust = -0.4, 
+                 vjust = 1.5, 
+                 n.cuts = 13,
+                 labelround = 2)+ 
+        coord_equal()+
+        ylab("True Positive Rate")+
+        xlab("False Positive Rate")+
+        ggtitle("ROC Curve on Test Data")
 
-#Accuracy for dropouts
-print('Accuracy for dropouts')
-mean(predicted[observed==1] == observed[observed==1])
+##Can use this code to get predicts after determine final cutpoint
+#cut <- 
+
+#predicted <- ifelse(pred.probs > cut, 1, 0) #Uses determined cutpoint to make predictions
+
+##Overall accuracy
+#print('Overall test set accuracy')
+#mean(predicted == observed)
+#
+##Accuracy for non-dropouts
+#print('Accuracy for non-dropouts')
+#mean(predicted[observed==0] == observed[observed==0])
+#
+##Accuracy for dropouts
+#print('Accuracy for dropouts')
+#mean(predicted[observed==1] == observed[observed==1])
 
 ```
 
+As expected, this ROC curve will have a slightly worse AUC than the ROC 
+produced during training--even with taking measures to prevent overfitting,
+models generally will do better on training data than testing data. So, we
+now have a good set of estimates of different accuracy rates at various 
+cutpoints for new, out-of-sample data.
+
+### Determining a Cutpoint
+
+The last step is determining an optimal cutpoint. To determine a cutpoint, 
+the context of the problem is key. In the case of predicting dropouts, 
+most districts would probably value maximizing true positives over 
+minimizing false negatives. In other words, districts would err on the 
+side of overpredicting dropouts, rather than err on the side of
+underpredicting them.
+
+If the goal is to minimzie the number of dropouts, giving a dropout 
+intervention to a non-dropout student (a false positive) has far fewer 
+costs than failing to provide interventions to a student who would 
+otherwise drop out (a false negative). In addition, a student who 
+receives a drop out intervention will most likely benefit from that 
+intervention, regardless of whether or not they would have dropped 
+out without it. By contrast,a student who fails to receive a dropout 
+intervention and drops out of school will likely face great hardships 
+because of it. Therefore, if our model will be biased either towards 
+predicting more dropouts than there actually are or predicting fewer 
+dropouts than there actually are, we'd want it to over-predict dropouts. 
+
+However, false positives have costs. It'd be impossible to give costly
+interventions to all students. A data scienstist would need to meet with
+policymakers and stakeholders to collectively decide the cutpoint at which
+the district would be comfortable providing dropout intervention services.
+
+To inform this discussion, it's often helpful to frame the problem in terms
+of raw numbers, rather than probabilites. For example, say you work in a district 
+of 1,000 rising 9th graders. The data shows that 19% of rising 9th graders in the 
+district drop out. Imagine that for your model, the cutpoint of 10% yielded a 75% 
+true positive rate and 25% false positive rate on the test set. You can present 
+to stakeholders the following:
+
+"In our district, typically 19% of rising 9th graders eventually drop out of high
+school. So, among our 1,000 current rising 9th graders, we'd expect $0.19 * 1,000 = 190$
+to drop out. My model tells us the probability that a certain rising 9th grader will
+drop out. Our task is to decide when this probability gets high enough that we start
+giving an intervention. 
+
+If we decide that we should give interventions to students with a probability of dropping
+out of 10% or higher, that would mean that about $0.75 * 190 = 143$ of the 190 future 
+dropouts would receive the intervention. In addition, of the 810 non-dropouts, about
+$0.25 * 810 = 203$ of them would receive the intervention. So, in total, we'd have about
+346 students receiving the dropout intervention.
+
+If we raise the probabily threshold above 10%, we'd reduce costs by giving the intervention
+to less students. But we'd also catch fewer future dropouts with the intervention."
+
+Using the same calculations above, the data scientist can give multiple numerical estimates
+for different cutpoints to district leaders. Finally, a decision would be made. And, just
+like that, you now have a finely tuned model to predict future dropouts!
