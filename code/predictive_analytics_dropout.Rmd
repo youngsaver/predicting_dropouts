@@ -71,7 +71,7 @@ relevant predictor features (and outcome feature) that we retain from
 the dataset for model fitting and analysis: 
 
 | Feature name          | Feature Description                                                                 |
-|:-----------           |:------------------                                                                  |
+|:------           |:-----------------------------------------                                                                       |
 | `dropout`             | Outcome indicator: "0" if did not dropout of high school, 1 if did                  |
 | `male`                | Indicator: "0" if female, "1" if male                                               |
 | `race_ethnicity`      | Categorical: student race-ethnicity                                                 |
@@ -124,9 +124,9 @@ Here are the steps:
 2. split data between a train and test set
 3. process training data based on exploration, to prepare for fitting
 4. use cross-validation to train the parameters of the Lasso model
-5. generate an ROC curve and determine a probabiliy cut-point for predcition 
 6. process the testing data (based on processing of training data)
-7. make predictions on test set and evaluate accuracy
+7. generate an ROC curve from test set predictions and determine cutpoint
+8. report expected accuracies of final model on out-of-sample data
 
 ## Setup
 
@@ -677,9 +677,11 @@ possible models one could use to predict Y given X:
 
 The three sample regression equations that produce these models are:
 
-Left Panel: $Y = \Beta_{0} + \Beta_{1}X $
-Middle Panel: $Y = \Beta_{0} + \Beta_{1}X + \Beta_{2}X^{2} $
-Right Panel: $Y = \Beta_{0} + \Beta_{1}X + \Beta_{2}X^{2} + \Beta_{3}X^{3} + \Beta_{4}X^{4} + \Beta_{5}X^{5}$
+Left Panel: $Y = {\beta}_{0} + {\beta}_{1}X$
+
+Middle Panel: $Y = {\beta}_{0} + {\beta}_{1}X + {\beta}_{2}X^{2}$
+
+Right Panel: $Y = {\beta}_{0} + {\beta}_{1}X + {\beta}_{2}X^{2} + {\beta}_{3}X^{3} + {\beta}_{4}X^{4} + {\beta}_{5}X^{5}$
 
 Let's evaluate the first, left-most model. This model is too simple,
 as it tries to map a linear model to a clearly curved relation between
@@ -724,31 +726,31 @@ The Lasso binary classification model is based on logistic regression. The dange
 using logistic regression for predicting new data is that we may overfit our model, by
 either using too many predictors (as with the example above) or having Beta coefficient
 values that are too high in magnitude--that are too strong. The Lasso has a built-in
-"tuning parameter", $\Lambda$, which acts as a penalty factor on our Betas. If a 
+"tuning parameter", $\lambda$, which acts as a penalty factor on our Betas. If a 
 predictor's Beta value is so strong that it will start to cause our model to fit to noise,
 it will reduce the Beta value. Or, if a certain feature doesn't really help our model
 explain variation in the data enough, it will penalize the Beta to a value of 0, effectively
 cutting out that predictor from our model completely.
 
-The trick is that if we make the penalty factor, $\Lambda$, too high, it will
-penalize our Beta values too much and our model may underfit the data. If we set $\Lambda$
+The trick is that if we make the penalty factor, $\lambda$, too high, it will
+penalize our Beta values too much and our model may underfit the data. If we set $\lambda$
 too low, the penalty will not be great enough to prevent overfitting. So that begs the
-question: how do we find the best possible value for $\Lambda$?
+question: how do we find the best possible value for $\lambda$?
 
 ### K-fold cross-validation
 
 That is where cross-validation comes in. Here, we take you through K-fold cross-validation.
 In K-fold cross validation, we cut our data into 'k' folds. For example, say we had 100
 data points and we wanted to do k = 5 folds. We take our data and slice it into 5 equal
-portions (so 20 data points in each portion). Then, for a certain value of $\Lambda$, 
+portions (so 20 data points in each portion). Then, for a certain value of $\lambda$, 
 we fit a Lasso model on the first four portions of the data. The last portion (the last 20
 data points) is saved as a mock 'test set'. We see how well our model does in predicting 
 values on this test set. We then delegate a different slice of the data to be the new test 
 set, and we fit our model on the other four folds. We iterate this process five times 
 until each slice of the data has been the test set at least once. Every time we iterate
 through one of the k folds, we save the predicition accuracy of the model. Then we average
-these accuracies to come up with a predicted accuracy for a model of that $\Lambda$. By 
-delegating a portion as a test set, this method allows us to estimate prediction accuracy on out-of-sampled data. We then do the above process for a set of $\Lambda$ values we'd like
+these accuracies to come up with a predicted accuracy for a model of that $\lambda$. By 
+delegating a portion as a test set, this method allows us to estimate prediction accuracy on out-of-sampled data. We then do the above process for a set of $\lambda$ values we'd like
 to try. The tuning parameter value that produces the best prediction accuracy in
 cross-validation is the value we will use in our final model.
 
@@ -887,23 +889,23 @@ and we are using `glmnet` to fit the Lasso model.
 #lineplot.dropout
 #
 #print(paste("Best overall accuracy:",best.accuracy))
-#print(paste("Lambda for best overall accuracy:",best.param))
+#print(paste("lambda for best overall accuracy:",best.param))
 #print(paste("Accuracy for dropout subgroup:",best.accuracy.dropout))
 #cat('\n')
 #print(paste("Best dropout accuracy:",best.dropout.accuracy))
-#print(paste("Lambda for best dropout accuracy:",best.dropout.param))
+#print(paste("lambda for best dropout accuracy:",best.dropout.param))
 #print(paste("Overall accuracy:",best.dropout.accuracy.overall))
 #
 
 ```
 
 Our cross-validation shows us the value of the Lasso's penalty 
-factor, $\Lambda$, that maximized prediction accuracy across the 5-fold 
-test sets: `r best.param`. The accuracy this tuning parameter value 
-produced was `r round(best.accuracy, 2)`. This is a percent signifying 
+factor, $\lambda$, that maximized prediction accuracy across the 5-fold 
+test sets: `r #best.param`. The accuracy this tuning parameter value 
+produced was `r #round(best.accuracy, 2)`. This is a percent signifying 
 that, among all the test set data points in cross-valdiation, our models 
 predicted whether the student would or would not drop out correctly
-`r round(best.accuracy*100, 2)`percent of the time.
+`r #round(best.accuracy*100, 2)`percent of the time.
 
 Above, we implemented the cross-validation manually, in order to show 
 the structure of cross-validation, However, this is rarely done in 
@@ -960,13 +962,13 @@ that no students dropped out, our overall classification accuracy would be
 useless for the task of predicting future dropouts, since the model would 
 classify all future dropouts as non-dropouts.
 
-Our cross-validation was run trying to find the $\Lambda$ value that maximized
+Our cross-validation was run trying to find the $\lambda$ value that maximized
 overall classification accuracy. In doing so, we ran the danger of using a tuning
 parameter value that would maximize overall accuracy, at the cost of predictive
 power among future dropouts. We can tell from the output of the cross-validation
 that our chosen model would do pretty horrendously in predicting future
 dropouts: Among students in our training dataset who were labeled as a dropout, 
-our 'best' model only predict `r round(best.accuracy.dropout*100, 2)`percent of 
+our 'best' model only predict `r #round(best.accuracy.dropout*100, 2)`percent of 
 them to drop out.
 
 We need to use a method other than overall classification accuracy, which takes into
@@ -1011,7 +1013,7 @@ true positive rate increases, as does the false positive rate. As the cutpoints 
 in value, the true positive rate decreases in value, as does the false positive rate. 
 The goal of the model is to push this curve as far to the upper-left corner of the graph
 as possible--to the area with high true positive rate and low false positive rate. So,
-we want to perform a cross-validation to tune our $\Lambda$ to the value that produces the 
+we want to perform a cross-validation to tune our $\lambda$ to the value that produces the 
 best--the most shifted upwards and left--ROC curve. A way to distill the "best" ROC curve
 is to take the area under the curve, also known as the 'AUC.' The higher the AUC, the more
 shifted (and stretched) our ROC curve is to the upward-left corner of the graph. The highest
@@ -1085,13 +1087,13 @@ ggplot(model.ROC$pred[roc.index, ],
 ```
 
 Our cross-validation shows us the value of the Lasso's penalty 
-factor, $\Lambda$, that maximized AUC across the 5-fold test sets: 
+factor, $\lambda$, that maximized AUC across the 5-fold test sets: 
 `r model.ROC$bestTune[["lambda"]]`. The AUC this tuning parameter value 
 produced was `r round(model.ROC$bestTune[["lambda"]], 2)`. The ROC
 curve generated from this model during cross-validation is visualized
 above.
 
-So, with this cross-validation, we have tuned $\Lambda$ and fitted
+So, with this cross-validation, we have tuned $\lambda$ and fitted
 our model. Now, we just need to estimate our accuracies on the 
 out-of-sample test set.
 
