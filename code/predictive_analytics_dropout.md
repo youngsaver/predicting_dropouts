@@ -20,17 +20,7 @@ output:
 *Programmed in R*
 
 ## Getting Started
-```{r knitrSetup, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment=NA}
-# Set options for knitr
-library(knitr)
-knitr::opts_chunk$set(comment=NA, warning=FALSE, echo=TRUE,
-                      root.dir = normalizePath("../"),
-                      error=FALSE, message=FALSE, fig.align='center',
-                      fig.width=8, fig.height=6, dpi = 144, 
-                      fig.path = "../figure/E_", 
-                      cache.path = "../cache/E_")
-options(width=80)
-```
+
 
 
 <div class="navbar navbar-default navbar-fixed-top" id="logo">
@@ -133,7 +123,8 @@ Here are the steps:
 To prepare for this project you will need to ensure that your R installation 
 has the necessary add-on packages and that you can read in the dataset. 
 
-```{r installPackages, eval=FALSE}
+
+```r
 # Install add-on packages needed
 install.packages("dplyr") # this will update your installed version to align with 
 install.packages("pROC") # those in the tutorial 
@@ -147,7 +138,8 @@ install.packages("plotROC")
 Now we call the packages we need and we read in our full dataset, as well as some
 helper functions.
 
-```{r loadWorkspace}
+
+```r
 # Load the packages you need
 library(dplyr)
 library(pROC)
@@ -176,15 +168,21 @@ data <- read.csv("../data/training_2009.csv", stringsAsFactors = FALSE)
 Ensure that the data imported correctly by checking that the data
 is unique by student ID.
 
-```{r OneRowPerStudent}
+
+```r
 nrow(data) == n_distinct(data$sid)
+```
+
+```
+[1] TRUE
 ```
 
 Faketucky wants the model to based only on certain predictors and, of
 course, the outcome variable. We will select for just those predictors and
 the outcome variable here:
 
-```{r Selection}
+
+```r
 #Features to be retained in dataset
 features <- c("dropout",
               "male",
@@ -206,6 +204,10 @@ data <- data[, features]
 dim(data)
 ```
 
+```
+[1] 52942    12
+```
+
 Note that we have more than 52,000 student records in this dataset. A lot
 of data is required for making accurate preidiction models and a dataset
 of this size should be enough to build a quality model and to test its
@@ -217,10 +219,25 @@ effectiveness.
 
 Let's look at the variable we are trying to predict--or the "outcome" variable. We create tables to show the distribution of students marked dropouts and students not marked dropouts.
 
-```{r, echo=TRUE}
-table(data$dropout, useNA = "always")
-round((table(data$dropout, useNA = "always")/nrow(data))*100,2)
 
+```r
+table(data$dropout, useNA = "always")
+```
+
+```
+
+    0     1  <NA> 
+43053  9889     0 
+```
+
+```r
+round((table(data$dropout, useNA = "always")/nrow(data))*100,2)
+```
+
+```
+
+    0     1  <NA> 
+81.32 18.68  0.00 
 ```
 
 About 19% of students are marked as dropouts. We will keep this in mind for our analyses,
@@ -231,7 +248,8 @@ is no missing data for our outcome variable.
 
 Let's use a loop to investigate the distributions of our categorical predictors:
 
-```{r, eval=FALSE}
+
+```r
 #Loop over categorical feature names
 for(i in c("male", "race_ethnicity", "frpl_11", "sped_11", "lep_11", 
            "gifted_11","ever_alt_sch_11")){
@@ -241,7 +259,6 @@ for(i in c("male", "race_ethnicity", "frpl_11", "sped_11", "lep_11",
   print(table(data[, i], useNA="always"))
   
 }#End loop over feature names
-
 ```
 
 We have 11 missing values for the gender indicator, 685 missing values 
@@ -250,17 +267,27 @@ lunch indicator. No other values are missing. Note that when we read the
 data in, `race_ethnicity` contains blank values that are not marked as `NA` 
 by R. Let's change that here:
 
-```{r}
+
+```r
 #Replace blanks with 'NA'
 data$race_ethnicity[data$race_ethnicity == ""] <- NA
 table(data$race_ethnicity, useNA = "always")
+```
+
+```
+
+        African-American   Asian/Pacific Islander                 Hispanic 
+                    6552                      674                     1709 
+Multiple/Native American                    White                     <NA> 
+                     940                    42382                      685 
 ```
 
 Finally, we will make sure these categorical variables are classified as
 factors in R, so that the program treats them as categorical (rather than
 ordinal or numeric):
 
-```{r MakeFactors}
+
+```r
 #Vector of all factor variables
 factors <- c("dropout","male","race_ethnicity","gifted_11",
              "ever_alt_sch_11","sped_11","frpl_11","gifted_11","lep_11")
@@ -273,14 +300,14 @@ for(variable in factors){
   data[, variable] <- as.factor(as.character(data[, variable]))
   
 }# End loop over feature names
-
 ```
 
 ### Numeric features
 
 Let's look at our continuous or ordinal predictor variables: 
 
-```{r SummaryNumeric}
+
+```r
 #Loop over numeric feature names
 for(i in c("scale_score_8_math","scale_score_8_read","pct_absent_11", "cum_gpa_11")){
   
@@ -288,7 +315,21 @@ for(i in c("scale_score_8_math","scale_score_8_read","pct_absent_11", "cum_gpa_1
   print(summary(data[, i])) #Print summary for feature
   
 }#End loop over numeric features
+```
 
+```
+[1] "scale_score_8_math"
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+   0.00   26.00   42.00   41.36   57.00  183.00    8989 
+[1] "scale_score_8_read"
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+   0.00   37.00   47.00   47.46   58.00  177.00    8975 
+[1] "pct_absent_11"
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+   0.000    3.189    6.079    8.437   10.794 3153.000       87 
+[1] "cum_gpa_11"
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+  0.000   2.044   2.694   2.631   3.307   4.000    1222 
 ```
 
 Each variable contains missing values: the reading and math scores have 
@@ -297,7 +338,8 @@ We also see very high outliers--impossibly high--for all variables besides
 GPA. Let's truncate those by turning them into missing values. Then we'll 
 visualize the distributions for each as a histogram:
 
-```{r abs_trunc}
+
+```r
 #Loop over numeric feature names
 for(i in c("scale_score_8_math","scale_score_8_read","pct_absent_11","cum_gpa_11")){
   
@@ -305,8 +347,9 @@ for(i in c("scale_score_8_math","scale_score_8_read","pct_absent_11","cum_gpa_11
   hist(data[, i], main=i) #Visualize as histogram
   
 }#End loop over feature names
-
 ```
+
+<img src="../figure/E_abs_trunc-1.png" style="display: block; margin: auto;" /><img src="../figure/E_abs_trunc-2.png" style="display: block; margin: auto;" /><img src="../figure/E_abs_trunc-3.png" style="display: block; margin: auto;" /><img src="../figure/E_abs_trunc-4.png" style="display: block; margin: auto;" />
 
 We see very heavy right skew for percent absent. This makes 
 sense, as most students will miss below about 20% of school days.
@@ -333,12 +376,14 @@ of a right-skewed distribution with produce lower values for high outliers,
 making the shape more symmetric. We show the logiarthm transformation of the 
 percent absent data feature here:
 
-```{r DataTransform1}
+
+```r
 # // Investigate transformations
 #Visualize log transformation of percent absences
 hist(log(data$pct_absent_11))
-
 ```
+
+<img src="../figure/E_DataTransform1-1.png" style="display: block; margin: auto;" />
 
 Note that it was transformed it too much, making it a left-skewed distribution. 
 The log transformation, in other words, was too powerful. Moreover, if we found an 
@@ -347,24 +392,30 @@ since the logarithm of zero is undefined. A more moderate transformation would b
 raising the data to a power below 1. We will try raising the data to the power of 0.5, 
 also known as the square root transformation, and to the power of 0.25.
 
-```{r DataTransform2}
+
+```r
 # // Investigate transformations
 #Visualize square root transformation
 hist(sqrt(data$pct_absent_11))
+```
 
+<img src="../figure/E_DataTransform2-1.png" style="display: block; margin: auto;" />
+
+```r
 #Visualize transformation of (1/4) power
 hist(data$pct_absent_11^0.25)
-
 ```
+
+<img src="../figure/E_DataTransform2-2.png" style="display: block; margin: auto;" />
 
 The square root transformation is not powerful enough, but the second 
 transformation--raising to the power of 0.25--does the trick. The data looks 
 a lot more normal. Thus, we save the data transformed by that power.
 
-```{r DataTransform3}
+
+```r
 #Store transformed data
 data$pct_absent_11 <- data$pct_absent_11^0.25
-
 ```
 
 Now let's transform the left-skewed distribution. To transform a 
@@ -372,20 +423,22 @@ left-skewed distribution, often squaring the values is a good solution.
 Because GPA is non-negative, the order will be preserved even if we 
 square the values.
 
-```{r DataTransform4}
+
+```r
 #Visualize square root transformation
 hist(data$cum_gpa_11^2)
-
 ```
+
+<img src="../figure/E_DataTransform4-1.png" style="display: block; margin: auto;" />
 
 Although not necessarily normal, the distribution at least appears more 
 symmetric now, which will help in our modeling. We store this 
 transformed version of the variable.
 
-```{r DataTransform5}
+
+```r
 #Store transformed data
 data$cum_gpa_11 <- data$cum_gpa_11^2
-
 ```
 
 ## Train and Test
@@ -411,7 +464,8 @@ to provide an estimate of predictive accuracy, thus the test set is smaller.
 
 Here, we split our data randomly between train and test sets:
 
-```{r TrainTestSplit, echo=TRUE}
+
+```r
 #Set seet
 set.seed(1738)
 
@@ -432,8 +486,18 @@ rownames(test_data) <- NULL
 
 #Show dimensions of both datasets
 dim(train_data)
-dim(test_data)
+```
 
+```
+[1] 42354    12
+```
+
+```r
+dim(test_data)
+```
+
+```
+[1] 10588    12
 ```
 
 
@@ -444,9 +508,36 @@ dim(test_data)
 Now let's look into handling the datasets missing value, specifically within
 the training set.
 
-```{r missing}
-summary(train_data)
 
+```r
+summary(train_data)
+```
+
+```
+ dropout     male                        race_ethnicity  scale_score_8_math
+ 0:34434   0   :20367   African-American        : 5259   Min.   : 0.00     
+ 1: 7920   1   :21977   Asian/Pacific Islander  :  540   1st Qu.:26.00     
+           NA's:   10   Hispanic                : 1362   Median :42.00     
+                        Multiple/Native American:  765   Mean   :41.32     
+                        White                   :33864   3rd Qu.:57.00     
+                        NA's                    :  564   Max.   :80.00     
+                                                         NA's   :7197      
+ scale_score_8_read gifted_11 ever_alt_sch_11 sped_11   pct_absent_11  
+ Min.   : 0.00      0:34307   0:30682         0:37529   Min.   :0.000  
+ 1st Qu.:37.00      1: 8047   1:11672         1: 4825   1st Qu.:1.338  
+ Median :47.00                                          Median :1.572  
+ Mean   :47.43                                          Mean   :1.557  
+ 3rd Qu.:58.00                                          3rd Qu.:1.814  
+ Max.   :80.00                                          Max.   :3.117  
+ NA's   :7213                                           NA's   :81     
+   cum_gpa_11     frpl_11      lep_11   
+ Min.   : 0.000   0   :16502   0:41683  
+ 1st Qu.: 4.170   1   :25292   1:  671  
+ Median : 7.244   NA's:  560            
+ Mean   : 7.637                         
+ 3rd Qu.:10.912                         
+ Max.   :16.000                         
+ NA's   :969                            
 ```
 
 It looks like we have missing values for gender, race-ethnicity, 8th grade 
@@ -484,7 +575,8 @@ power to our final model.
 
 We implement this below:
 
-```{r missing2}
+
+```r
 #All our features with missing data
 missing.features <-   c("male",
                         "race_ethnicity",
@@ -533,7 +625,32 @@ for(feature in colnames(data.miss)){
 #Fit logistic regression model and summarize
 logit <- glm(dropout ~ . , data = data.miss, family = "binomial")
 summary(logit)$coef[,c(1,4)]
+```
 
+```
+                                            Estimate      Pr(>|z|)
+(Intercept)                            -2.0785159598  5.138930e-90
+male1                                   0.0473974462  1.236109e-01
+race_ethnicityAsian/Pacific Islander    0.0213412217  8.705389e-01
+race_ethnicityHispanic                 -0.0419025509  6.239212e-01
+race_ethnicityMultiple/Native American -0.2756018395  1.423364e-02
+race_ethnicityWhite                    -0.2330731326  7.547697e-09
+scale_score_8_math                     -0.0041762928  6.620958e-04
+scale_score_8_read                      0.0003988659  7.875169e-01
+gifted_111                              0.1121609414  2.602652e-02
+ever_alt_sch_111                        0.4563627927  5.633540e-51
+sped_111                               -0.0320475556  4.537102e-01
+pct_absent_11                           1.1166835961 8.852668e-179
+cum_gpa_11                             -0.2325726290  0.000000e+00
+frpl_111                                0.0299472763  3.800279e-01
+lep_111                                 0.0738944114  4.991299e-01
+`miss male`1                            0.5170189288  5.487811e-01
+`miss race_ethnicity`1                  0.2999072716  1.022521e-02
+`miss scale_score_8_math`1              0.4318332747  7.294081e-10
+`miss scale_score_8_read`1              0.5966824590  3.212148e-18
+`miss pct_absent_11`1                   0.8116263394  3.897816e-03
+`miss cum_gpa_11`1                      2.5748973302 4.416506e-193
+`miss frpl_11`1                        -0.1298668509  2.396553e-01
 ```
 
 In our basic logistic regression model, some of our most powerful 
@@ -565,7 +682,8 @@ overfitting and worse prediction accuracy on out-of-sample data.
 We will account for this convern during the model fitting stage,
 in the cross validation section.
 
-```{r missingtrain}
+
+```r
 #All our features that will get a missingness indicator
 miss.ind.features <-   c("scale_score_8_math",
                         "scale_score_8_read",
@@ -610,6 +728,37 @@ for(feature in colnames(train_data)){
 summary(train_data)
 ```
 
+```
+ dropout   male                       race_ethnicity  scale_score_8_math
+ 0:34434   0:20367   African-American        : 5259   Min.   : 0.00     
+ 1: 7920   1:21987   Asian/Pacific Islander  :  540   1st Qu.:29.00     
+                     Hispanic                : 1362   Median :41.32     
+                     Multiple/Native American:  765   Mean   :41.32     
+                     White                   :34428   3rd Qu.:53.00     
+                                                      Max.   :80.00     
+ scale_score_8_read gifted_11 ever_alt_sch_11 sped_11   pct_absent_11  
+ Min.   : 0.00      0:34307   0:30682         0:37529   Min.   :0.000  
+ 1st Qu.:39.00      1: 8047   1:11672         1: 4825   1st Qu.:1.339  
+ Median :47.43                                          Median :1.571  
+ Mean   :47.43                                          Mean   :1.557  
+ 3rd Qu.:55.00                                          3rd Qu.:1.813  
+ Max.   :80.00                                          Max.   :3.117  
+   cum_gpa_11     frpl_11   lep_11    missscale_score_8_math
+ Min.   : 0.000   0:16502   0:41683   0:35157               
+ 1st Qu.: 4.240   1:25852   1:  671   1: 7197               
+ Median : 7.408                                             
+ Mean   : 7.637                                             
+ 3rd Qu.:10.815                                             
+ Max.   :16.000                                             
+ missscale_score_8_read misspct_absent_11 misscum_gpa_11
+ 0:35141                0:42273           0:41385       
+ 1: 7213                1:   81           1:  969       
+                                                        
+                                                        
+                                                        
+                                                        
+```
+
 ### Polynomial Terms
 
 Sometimes, the outcome from a model may vary linearly with
@@ -626,7 +775,8 @@ in the cross validation section.
 Here, we attach additional polynomial transformed features to our
 dataset:
 
-```{r PolyTerms}
+
+```r
 # // Create polynomial terms
 #Loop over feature names
 for(variable in c("scale_score_8_math","scale_score_8_read","pct_absent_11","cum_gpa_11")){
@@ -652,13 +802,13 @@ Next, it subtracts each observation by the mean (centering it at zero)
 and then divides each value by the standard deviation (to standardize
 it).
 
-```{r DataProcess, echo=TRUE}
+
+```r
 #Stores objection with informatoin on centering and scaling numeric data
 processor <- preProcess(train_data, method = c("center","scale"))
 
 #Centers and scales our training numberic data
 train_data_s <- predict(processor, train_data)
-
 ```
 
 
@@ -771,7 +921,8 @@ Now we manually implement cross-validation on our own training data, using the L
 Note that we are using functions from the `caret` package here to produce the k-folds,
 and we are using `glmnet` to fit the Lasso model. 
 
-```{r crossvallambda}
+
+```r
 set.seed(4612)
 
 #Creates matrix of covariates
@@ -885,46 +1036,88 @@ lineplot.overall <- ggplot(lasso_results, aes(lambda))+
 
 
 lineplot.overall
+```
 
+<img src="../figure/E_crossvallambda-1.png" style="display: block; margin: auto;" />
+
+```r
 #Shows dropout accuracy at different lambda values
 lineplot.dropout <- ggplot(lasso_results, aes(lambda))+
              geom_smooth(aes(y = dropout.accuracy), color = "dodgerblue2")+
              scale_x_continuous(trans ='log10')
 
 lineplot.dropout
-
 ```
 
+<img src="../figure/E_crossvallambda-2.png" style="display: block; margin: auto;" />
 
-```{r}
 
+
+```r
 # TODO: Finish this structure, a better way to organize CV results
 # Should set this up as a data.frame structure
 # Round the parameters before printing too
 
 
 print(paste("Best overall accuracy:", max(lasso_results$overall.accuracy)))
+```
+
+```
+[1] "Best overall accuracy: 0.168783943329398"
+```
+
+```r
 print(paste("lambda for best overall accuracy:", 
             lasso_results$lambdas[lasso_results$overall.accuracy == 
                                     max(lasso_results$overall.accuracy)]))
+```
+
+```
+[1] "lambda for best overall accuracy: "
+```
+
+```r
 print(paste("Accuracy for dropout subgroup:", max(lasso_results$dropout.accuracy)))
+```
+
+```
+[1] "Accuracy for dropout subgroup: 0.0464646464646465"
+```
+
+```r
 cat('\n')
+```
+
+```r
 print(paste("Best dropout accuracy:", max(lasso_results$dropout.accuracy)))
+```
+
+```
+[1] "Best dropout accuracy: 0.0464646464646465"
+```
+
+```r
 print(paste("lambda for best dropout accuracy:", 
              lasso_results$lambdas[lasso_results$dropout.accuracy == 
                                     max(lasso_results$dropout.accuracy)]))
+```
+
+```
+[1] "lambda for best dropout accuracy: "
+```
+
+```r
 #Not sure what this one is
 #print(paste("Overall accuracy:",best.dropout.accuracy.overall))
-
 ```
 
 Our cross-validation shows us the value of the Lasso's penalty 
 factor, $\lambda$, that maximized prediction accuracy across the 5-fold 
-test sets: `r #best.param`. The accuracy this tuning parameter value 
-produced was `r #round(best.accuracy, 2)`. This is a percent signifying 
+test sets: . The accuracy this tuning parameter value 
+produced was . This is a percent signifying 
 that, among all the test set data points in cross-valdiation, our models 
 predicted whether the student would or would not drop out correctly
-`r #round(best.accuracy*100, 2)`percent of the time.
+percent of the time.
 
 
 
@@ -934,7 +1127,8 @@ practice. The `caret` package includes useful tools for training models
 via cross-validation. We demonstrate the same cross-validation process below, 
 using functions from `caret`.
 
-```{r CaretKFold}
+
+```r
 #Set k for k-fold validation
 K = 5
 
@@ -961,13 +1155,26 @@ lasso.model <- train(dropout~., train_data_car, method = "glmnet",
 plan(sequential) # close out parallel workers
 #Shows best tuning parameter in model
 lasso.model$bestTune["lambda"]
+```
 
+```
+         lambda
+28 5.011872e-05
+```
+
+```r
 #Shows performance of model
 getTrainPerf(lasso.model)
+```
 
+```
+  TrainAccuracy TrainKappa method
+1     0.8581244   0.447894 glmnet
+```
+
+```r
 #Shows coefficients in model
 #coef(lasso.model$finalModel, lasso.model$bestTune$lambda)
-
 ```
 
 ### Unbalanced Classes
@@ -989,7 +1196,7 @@ parameter value that would maximize overall accuracy, at the cost of predictive
 power among future dropouts. We can tell from the output of the cross-validation
 that our chosen model would do pretty horrendously in predicting future
 dropouts: Among students in our training dataset who were labeled as a dropout, 
-our 'best' model only predict `r #round(best.accuracy.dropout*100, 2)`percent of 
+our 'best' model only predict percent of 
 them to drop out.
 
 We need to use a method other than overall classification accuracy, which takes into
@@ -1059,7 +1266,8 @@ Note that this can be done again in the `caret` package, with slight modificatio
 
 ### Fitting with ROC
 
-```{r ROCFit}
+
+```r
 #Set seed
 set.seed(4612)
 
@@ -1085,13 +1293,61 @@ plan(sequential)
 
 #Best paramter chosen
 model.ROC$bestTune["lambda"]
+```
 
+```
+         lambda
+28 5.011872e-05
+```
+
+```r
 #Shows performance on subgroups and ROC
 getTrainPerf(model.ROC)
+```
 
+```
+   TrainROC TrainSens TrainSpec method
+1 0.8395011 0.9589941 0.4195707 glmnet
+```
+
+```r
 #Shows coefficients in model
 coef(model.ROC$finalModel, model.ROC$bestTune$lambda)
+```
 
+```
+27 x 1 sparse Matrix of class "dgCMatrix"
+                                                  1
+(Intercept)                            -2.218106479
+male1                                   0.048992619
+race_ethnicityAsian/Pacific Islander    0.117295891
+race_ethnicityHispanic                  0.023699992
+race_ethnicityMultiple/Native American -0.150309868
+race_ethnicityWhite                    -0.108069156
+scale_score_8_math                     -0.094440789
+scale_score_8_read                     -0.018421728
+gifted_111                              0.021485760
+ever_alt_sch_111                        0.395370416
+sped_111                               -0.008127414
+pct_absent_11                          -0.138363477
+cum_gpa_11                             -4.318735583
+frpl_111                                0.052970101
+lep_111                                 0.111121654
+missscale_score_8_math1                 0.380430484
+missscale_score_8_read1                 0.633226569
+misspct_absent_111                      0.965998399
+misscum_gpa_111                         2.330194078
+`scale_score_8_math^2`                  .          
+`scale_score_8_math^3`                  0.009519349
+`scale_score_8_read^2`                  0.009180399
+`scale_score_8_read^3`                  .          
+`pct_absent_11^2`                       0.368145014
+`pct_absent_11^3`                       0.221510882
+`cum_gpa_11^2`                          6.789122804
+`cum_gpa_11^3`                         -3.181483162
+```
+
+```r
 #Get indeces for best model lambda
 roc.index <- model.ROC$pred$lambda == model.ROC$bestTune[["lambda"]]
 
@@ -1106,13 +1362,14 @@ ggplot(model.ROC$pred[roc.index, ],
         ylab("True Positive Rate")+
         xlab("False Positive Rate")+
         ggtitle("ROC Curve on Training Data")
-
 ```
+
+<img src="../figure/E_ROCFit-1.png" style="display: block; margin: auto;" />
 
 Our cross-validation shows us the value of the Lasso's penalty 
 factor, $\lambda$, that maximized AUC across the 5-fold test sets: 
-`r model.ROC$bestTune[["lambda"]]`. The AUC this tuning parameter value 
-produced was `r round(model.ROC$bestTune[["lambda"]], 2)`. The ROC
+5.0118723\times 10^{-5}. The AUC this tuning parameter value 
+produced was 0. The ROC
 curve generated from this model during cross-validation is visualized
 above.
 
@@ -1131,7 +1388,8 @@ training, as we are trying to mimic our model's performance on true out-of-sampl
 
 We start with adding a missingness indicator and imputating missing values.
 
-```{r missingtest}
+
+```r
 #Loop over features to include missing indicators for
 for(feature in miss.ind.features){
   
@@ -1170,9 +1428,41 @@ for(feature in colnames(test_data)){
 summary(test_data)
 ```
 
+```
+ dropout  male                      race_ethnicity scale_score_8_math
+ 0:8619   0:5021   African-American        :1293   Min.   : 0.00     
+ 1:1969   1:5567   Asian/Pacific Islander  : 134   1st Qu.:30.00     
+                   Hispanic                : 347   Median :41.32     
+                   Multiple/Native American: 175   Mean   :41.49     
+                   White                   :8639   3rd Qu.:54.00     
+                                                   Max.   :80.00     
+ scale_score_8_read gifted_11 ever_alt_sch_11 sped_11  pct_absent_11  
+ Min.   : 0.00      0:8566    0:7740          0:9396   Min.   :0.000  
+ 1st Qu.:39.00      1:2022    1:2848          1:1192   1st Qu.:1.330  
+ Median :47.43                                         Median :1.563  
+ Mean   :47.52                                         Mean   :1.545  
+ 3rd Qu.:56.00                                         3rd Qu.:1.807  
+ Max.   :80.00                                         Max.   :3.084  
+   cum_gpa_11     frpl_11  lep_11    missscale_score_8_math
+ Min.   : 0.000   0:4191   0:10423   0:8794                
+ 1st Qu.: 4.307   1:6397   1:  165   1:1794                
+ Median : 7.475                                            
+ Mean   : 7.706                                            
+ 3rd Qu.:10.923                                            
+ Max.   :16.000                                            
+ missscale_score_8_read misspct_absent_11 misscum_gpa_11
+ 0:8825                 0:10575           0:10335       
+ 1:1763                 1:   13           1:  253       
+                                                        
+                                                        
+                                                        
+                                                        
+```
+
 Now we can add polynomial predictors.
 
-```{r PolyTermstest}
+
+```r
 #Store factor variables as factor in data
 #Loop over feature names
 for(variable in c("scale_score_8_math","scale_score_8_read","pct_absent_11","cum_gpa_11")){
@@ -1182,15 +1472,14 @@ for(variable in c("scale_score_8_math","scale_score_8_read","pct_absent_11","cum
   test_data[, paste(variable,"^3",sep="")] <- test_data[, variable]^3
   
 }# End loop over feature names
-
 ```
 
 Now we can center and standardize.
 
-```{r DataProcesstest, echo=TRUE}
+
+```r
 #Centers and scales our testing numberic data (based on train data)
 test_data_s <- predict(processor, test_data)
-
 ```
 
 ### Making Predictions
@@ -1198,7 +1487,8 @@ test_data_s <- predict(processor, test_data)
 Finally, we make our predictions on the test data. We will generate our final ROC curve
 to evaluate our out-of-sample performance at various cutpoints. 
 
-```{r Prediction}
+
+```r
 #Predicts probabilities of dropping out on test data
 pred.probs <- predict(model.ROC, newdata = test_data_s[, -1], type = "prob")
 
@@ -1221,7 +1511,11 @@ ggplot(ROC.plot.frame,
         ylab("True Positive Rate")+
         xlab("False Positive Rate")+
         ggtitle("ROC Curve on Test Data")
+```
 
+<img src="../figure/E_Prediction-1.png" style="display: block; margin: auto;" />
+
+```r
 ##Can use this code to get predicts after determine final cutpoint
 #cut <- 
 
@@ -1238,7 +1532,6 @@ ggplot(ROC.plot.frame,
 ##Accuracy for dropouts
 #print('Accuracy for dropouts')
 #mean(predicted[observed==1] == observed[observed==1])
-
 ```
 
 As expected, this ROC curve will have a slightly worse AUC than the ROC 
