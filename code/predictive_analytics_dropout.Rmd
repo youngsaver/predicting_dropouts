@@ -20,6 +20,7 @@ output:
 *Programmed in R*
 
 ## Getting Started
+
 ```{r knitrSetup, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment=NA}
 # Set options for knitr
 library(knitr)
@@ -32,12 +33,34 @@ knitr::opts_chunk$set(comment=NA, warning=FALSE, echo=TRUE,
 options(width=80)
 ```
 
-
 <div class="navbar navbar-default navbar-fixed-top" id="logo">
 <div class="container">
 <img src="../img/open_sdp_logo_red.png" style="display: block; margin: 0 auto; height: 115px;">
 </div>
 </div>
+
+For this guide, the user will need R, Rstudio, and the following helpful R 
+packages:
+
+- `dplyr`: For manipulating variables and tidying output
+- `caret`: For cross-validation and learning algorithms
+- `glmnet`: For implementing the Lasso
+- `plotROC`: For plotting ROC curves
+- `doFuture`: For parallel processing
+- `foreach`: For loop structure with parallel processing
+
+Here is some code to install them:
+
+```{r installPackages, eval=FALSE}
+# Install add-on packages needed
+install.packages("dplyr")
+install.packages("caret")
+install.packages("glmnet")
+install.packages("plotROC")
+install.packages("doFuture") 
+install.packages("foreach")
+
+```
 
 ### Objective
 
@@ -131,36 +154,15 @@ Here are the steps:
 
 ## Setup
 
-To prepare for this project you will need to ensure that your R installation 
-has the necessary add-on packages and that you can read in the dataset. 
-
-```{r installPackages, eval=FALSE}
-# Install add-on packages needed
-install.packages("dplyr") # this will update your installed version to align with 
-install.packages("pROC") # those in the tutorial 
-install.packages("devtools")
-install.packages("glmnet")
-install.packages("gmodels")
-install.packages("elasticnet")
-install.packages("plotROC")
-install.packages("doFuture") # parallel processing
-install.packages("foreach") # parallel looping structure
-
-```
-
-Now we call the packages we need and we read in our full dataset, as well as some
-helper functions.
+Let's call the packages we need as well as some helper functions. In addition, 
+we will download the dataset.
 
 ```{r loadWorkspace}
 # Load the packages you need
 library(dplyr)
-library(pROC)
-library(devtools)
-library(elasticnet)
 library(plotROC)
 library(caret)
 library(glmnet)
-library(gmodels)
 library(doFuture)
 library(foreach) 
 registerDoFuture() # configure futures to work in R
@@ -180,16 +182,16 @@ data <- read.csv("../data/training_2009.csv", stringsAsFactors = FALSE)
 
 ### Validate the data
 
-Ensure that the data imported correctly by checking that the data
-is unique by student ID.
+Ensure that the data imported correctly by checking that the data is unique by 
+student ID.
 
 ```{r OneRowPerStudent}
 nrow(data) == n_distinct(data$sid)
 ```
 
-Faketucky wants the model to based only on certain predictors and, of
-course, the outcome variable. We will select for just those predictors and
-the outcome variable here:
+Faketucky wants the model to based only on certain predictors and, of course, 
+the outcome variable. We will select for just those predictors and the outcome 
+variable here:
 
 ```{r Selection}
 #Features to be retained in dataset
@@ -222,7 +224,9 @@ effectiveness.
 
 ### The outcome 
 
-Let's look at the variable we are trying to predict--or the "outcome" variable. We create tables to show the distribution of students marked dropouts and students not marked dropouts.
+Let's look at the variable we are trying to predict--or the "outcome" variable. 
+We create tables to show the distribution of students marked dropouts and 
+students not marked dropouts.
 
 ```{r, echo=TRUE}
 table(data$dropout, useNA = "always")
@@ -230,9 +234,9 @@ round((table(data$dropout, useNA = "always")/nrow(data))*100,2)
 
 ```
 
-About 19% of students are marked as dropouts. We will keep this in mind for our analyses,
-as prediction models can sometimes be insensitive to predicting minority outcomes. There 
-is no missing data for our outcome variable.
+About 19% of students are marked as dropouts. We will keep this in mind for our 
+analyses, as prediction models can sometimes be insensitive to predicting 
+minority outcomes. There is no missing data for our outcome variable.
 
 ### Categorical features
 
@@ -263,9 +267,9 @@ data$race_ethnicity[data$race_ethnicity == ""] <- NA
 table(data$race_ethnicity, useNA = "always")
 ```
 
-Finally, we will make sure these categorical variables are classified as
-factors in R, so that the program treats them as categorical (rather than
-ordinal or numeric):
+Finally, we will make sure these categorical variables are classified as factors
+in R, so that the program treats them as categorical (rather than ordinal or 
+numeric):
 
 ```{r MakeFactors}
 #Vector of all factor variables
@@ -513,14 +517,17 @@ a variable that reads "1" if the student has missing data for their
 8th grade math test, and "0" if the data is present. Then, the size 
 of the coefficient for this indicator from our logistic regression 
 will tell us if adding this extra variable has a chance to add any predictive 
-power to our final model. The reason we can compare the size of the predictors
+power to our final model. The reason we can compare the size of the coefficients
 is that we've already standardized our predictors, so they operate on the same
-scale (standard deviation of 1). The larger the predictor coefficient, the more 
-the variation in the response variable can be explained by a 1 standard 
-deviation change in that predictor (or, in the case of indicator predictors, 
-by a change in the indicator class).
+scale (standard deviation of 1). If a predictor has a coefficient in our model
+that is large in magnitude, that means that a 1 standard deviation change in
+that predictor (or, in the case of indicator predictors, a change in indicator
+class) can explain a relatively large amount of the variation in the response
+variable. 
 
-We implement this below:
+We implement the logistic regression below, by creating indicator variables for
+all features with missing data (0 = not missing, 1 = missing) and by performing
+simple mean/mode imputations. :
 
 ```{r missing2}
 #All our features with missing data
@@ -673,10 +680,10 @@ for(variable in c("math_ss","read_ss","pct_days_absent","gpa")){
 ### Overfitting: An Example
 
 The most important stage of the predictive modeling process is 
-cross-validation. Let's go through a simple example to elucidate why:
+cross-validation. Let's walk through a simple example to elucidate why:
 
-Say you are running a simple regression. There is one predictor 
-variable, X, and there is one outcome variable, Y. Here is the data:
+Say you are running a regression. There is one predictor variable, X, and there 
+is one outcome variable, Y. Here is the data:
 
 <img src="../img/no_fit.png" style="display: block; margin: 0 auto; height: 170px;">
 
@@ -909,21 +916,39 @@ dropouts. Let's compare the best overall accuracy and best dropout dropout
 accuracy during cross-validation, as well as their associated $\lambda$ values.
 
 ```{r}
-#Stores best overall accuracy and lambda value
+#Stores best overall accuracy
 best.overall.accuracy <- round(max(lasso_results$overall.accuracy),2)
+
+#Stores lambda value that created best overall accuracy
 best.lambda.overall <- round(lasso_results$lambda[lasso_results$overall.accuracy == 
                                     max(lasso_results$overall.accuracy)],8)
 best.lambda.overall <- best.lambda.overall[length(best.lambda.overall)] #In case of repeats
 
-#Stores best dropout accuracy and lambda value
+#Stores dropout accuracy at lambda value that created best overall accuracy
+dropoutacc.best.overall <- round(lasso_results$dropout.accuracy[lasso_results$overall.accuracy == 
+                                    max(lasso_results$overall.accuracy)],2)
+
+dropoutacc.best.overall <- dropoutacc.best.overall[length(dropoutacc.best.overall)] #Repeats
+
+#Stores best dropout accuracy
 best.dropout.accuracy <- round(max(lasso_results$dropout.accuracy),2)
+
+#Stores lambda value that created best dropout accuracy
 best.lambda.dropout <- round(lasso_results$lambda[lasso_results$dropout.accuracy == 
                                     max(lasso_results$dropout.accuracy)],8)
 best.lambda.dropout <- best.lambda.dropout[length(best.lambda.dropout)] #In case of repeats
 
+#Stores overall accuracy at lambda value that created best dropout accuracy
+overallacc.best.dropout <- round(lasso_results$overall.accuracy[lasso_results$dropout.accuracy == 
+                                    max(lasso_results$dropout.accuracy)],2)
+
+overallacc.best.dropout <- overallacc.best.dropout[length(overallacc.best.dropout)] #Repeats
+
 #Create data frame of best values
-cross.results <- data.frame(accuracy = c(best.overall.accuracy,
-                                         best.dropout.accuracy),
+cross.results <- data.frame(overall_accuracy = c(best.overall.accuracy,
+                                                overallacc.best.dropout),
+                            dropout_accuracy = c(dropoutacc.best.overall,
+                                                 best.dropout.accuracy),
                             lambda_value = c(best.lambda.overall,
                                              best.lambda.dropout))
 
@@ -937,15 +962,25 @@ head(cross.results)
 Our cross-validation shows us the value of the Lasso's penalty 
 factor, $\lambda$, that maximized overall prediction accuracy across the 5-fold 
 test sets: `r best.lambda.overall`. The accuracy this tuning parameter value 
-produced was `r best.overall.accuracy`. By contrast, our best performance among 
-the dropouts was an accuracy of only `r best.dropout.accuracy`. With the
-particularly dismal performance among the dropouts, we need to rethink how we
-do our cross-validation, to take into account the fact that one class (dropouts)
-has far fewer data points than the other class (non-dropouts). How can we fit our
-model so that it's more sensitive to the minority class (dropouts) while also
-making sure it doesn't provide too many false alarms (i.e., predicting a 
-dropout when the student wouldn't have otherwise dropped out)? The next section
-will discuss this issue.
+produced was `r best.overall.accuracy`. However, at this parameter value, our 
+accuracy among dropouts was `r dropoutacc.best.overall`. This model approaches 
+the naive model of just predicting each student to not drop out and is,
+effectively, useless. 
+
+By contrast, our best performance among the dropouts was an accuracy of only 
+`r best.dropout.accuracy` at a lambda value of `r best.lambda.dropout`. At this
+lambda value, the overall accuracy was only `r overallacc.best.dropout`. There
+is a clear trade-off: the more complex models (with lower parameter values) seem
+to be more able to predict dropouts, but they have poor overall accuracy. The
+models with high penalty factors are too simple and are useless at picking 
+dropouts, even if they do have high overall accuracy. 
+
+We need to take into account the fact that one class (dropouts) has far fewer 
+data points than the other class (non-dropouts). How can we fit our model so 
+that it's more sensitive to the minority class (dropouts) while also making sure
+it doesn't provide too many false alarms (i.e., predicting a dropout when the 
+student wouldn't have otherwise dropped out)? The next section will discuss this
+issue.
 
 Note: Above, we implemented the cross-validation manually, in order to show 
 the structure of cross-validation, However, this is rarely done in 
@@ -980,13 +1015,30 @@ lasso.model <- train(dropout~., train_data_car, method = "glmnet",
 
 plan(sequential) # close out parallel workers
 
-#Shows best tuning parameter in model
-lasso.model$bestTune["lambda"]
+##Shows best tuning parameter in model
+#lasso.model$bestTune["lambda"]
 
-#Shows performance of model
-getTrainPerf(lasso.model)
+##Shows performance of model
+#getTrainPerf(lasso.model)
+
+#Shows coefficients in model
+coef(lasso.model$finalModel, lasso.model$bestTune$lambda)
 
 ```
+
+When training a model in the `caret` implementation of cross-validation, it is
+easy to see the parameter value that produced the model with the highest 
+overall classification accuracy and to see what the highest classification 
+accuracy actually was. We commented out lines in the code above that would allow
+the user to see those outputs. 
+
+It is also easy to see the coefficients of the model that produced the highest
+classification accuracy during cross-validation, and these coefficients are 
+shown in the output above. Note that the Lasso tuned some of these coefficient 
+values to zero, meaning the predictors were effectively dropped from our model. 
+Thus, we can see how the Lasso's penalty factor not only diminishes coefficient
+values, but also drops some variables from the model completely, in order to 
+simplify and prevent overfitting.
 
 ### Unbalanced Classes
 
@@ -1032,15 +1084,15 @@ fewer true positives. This creates a continuum of true and false positive rates 
 on cutoff values that is often visualized as the 'ROC curve'. Here is an example
 of an ROC curve:
 
-<img src="../img/roc_example.png" style="display: block; margin: 0 auto; height: 320px;">
+<img src="../img/roc_example.png" style="display: block; margin: 0 auto; height: 380px;">
 
 The labeled points on the curve are cutpoints. As the cutpoints decrease in value, the
 true positive rate increases, as does the false positive rate. As the cutpoints increase
 in value, the true positive rate decreases in value, as does the false positive rate. 
 The goal of the model is to push this curve as far to the upper-left corner of the graph
-as possible--to the area with high true positive rate and low false positive rate. So,
+as possible: to the area with high true positive rate and low false positive rate. So,
 we want to perform a cross-validation to tune our $\lambda$ to the value that produces the 
-best--the most shifted upwards and left--ROC curve. A way to distill the "best" ROC curve
+best (the most shifted upwards and left) ROC curve. A way to distill the "best" ROC curve
 is to take the area under the curve, also known as the 'AUC.' The higher the AUC, the more
 shifted (and stretched) our ROC curve is to the upward-left corner of the graph. The highest
 AUC model will have cutpoints that that produce the lowest false positive rates and highest
@@ -1109,12 +1161,9 @@ coef(model.ROC$finalModel, model.ROC$bestTune$lambda)
 
 ```
 
-The numbers printed above are the coefficient values for our predictors. Note 
-that the Lasso tuned some of these coefficient values to zero, meaning the 
-predictors were effectively dropped from our model. Thus, we can see how the 
-Lasso's penalty factor not only diminishes coefficient values, but also drops 
-some variables from the model completely, in order to simplify and prevent 
-overfitting.
+This is the final model we will use to make predictions on out-of-sample test
+data. Note that here, just as above, the Lasso's penalty nixed several
+predictors from our model, in order to simplify it and prevent overfitting.
 
 The ROC curve generated from this model during cross-validation is visualized
 below.
@@ -1137,7 +1186,12 @@ ggplot(model.ROC$pred[roc.index, ],
 
 ```
 
-So, with this cross-validation, we have tuned $\lambda$ and fitted our model. 
+So, with this cross-validation, we have tuned $\lambda$ and fitted our model.
+We can already see that this model will perform better than the extreme models
+we produced during our first run at cross-validation. At various cutpoints in
+the ROC curve above above, we have a fairly high dropout accuracy (true positive
+rate), and the amount of false alarms (false positives) will not be absurd.
+
 Now, we just need to estimate our accuracies on the out-of-sample test set.
 
 ## Test Set Prediction
@@ -1246,7 +1300,7 @@ ggplot(ROC.plot.frame,
 ```
 
 As expected, this ROC curve will have a slightly worse AUC than the ROC 
-produced during training--even with taking measures to prevent overfitting,
+produced during training. Even with taking measures to prevent overfitting,
 models generally will do better on training data than testing data. So, we
 now have a good set of estimates of different accuracy rates at various 
 cutpoints for new, out-of-sample data.
